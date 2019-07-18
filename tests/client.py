@@ -1,11 +1,12 @@
 import aiocoap as coap
 import asyncio
-import gzip
+import json
+from gzip import compress
 from sys import argv, exit
 
 
 async def main(host: str, uri: str, method: coap.codes = coap.GET, payload: dict = None):
-	compressed_payload = payload
+	compressed_payload = compress(bytes(json.dumps(payload, separators=(',', ':'), force_ascii=True), 'ascii'), 9)
 
 	protocol = await coap.Context.create_client_context()
 
@@ -23,4 +24,5 @@ async def main(host: str, uri: str, method: coap.codes = coap.GET, payload: dict
 
 
 if __name__ == '__main__':
+
 	asyncio.get_event_loop().run_until_complete(main())
