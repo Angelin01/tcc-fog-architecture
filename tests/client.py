@@ -10,9 +10,12 @@ async def main(host: str, uri: str, method: coap.Code = coap.GET, payload: dict 
 
 	protocol = await coap.Context.create_client_context()
 
+	uri = f'coap://{host}/{uri}'
+
 	request = coap.Message(code=method, uri=f'coap://{host}/{uri}', payload=compressed_payload)
 
 	try:
+		print(f'Sending request to {uri} with payload {compressed_payload}')
 		response = await protocol.request(request).response
 	except Exception as e:
 		print('Failed to fetch resource:')
