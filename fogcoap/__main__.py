@@ -1,6 +1,6 @@
 import asyncio
 from aiocoap import resource, Context
-from .gen_resource import GenericResource
+from fogcoap.gen_resource import GenericResource
 
 
 def main():
