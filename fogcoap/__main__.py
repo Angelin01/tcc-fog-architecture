@@ -10,7 +10,7 @@ def main():
 
 	root.add_resource(('.well-known', 'core'),
                        resource.WKCResource(root.get_resources_as_linkheader))
-	root.add_resource(('test',), GenericResource())
+	root.add_resource(('generic', 'resource'), GenericResource())
 
 	asyncio.Task(coap.Context.create_server_context(root))
 
