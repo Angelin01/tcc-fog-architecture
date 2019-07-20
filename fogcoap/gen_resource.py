@@ -1,9 +1,10 @@
 import json
 from gzip import compress, decompress
 import aiocoap as coap
+import aiocoap.resource as resource
 
 
-class GenericResource(coap.resource.Resource):
+class GenericResource(resource.Resource):
 	"""
 	Generic Resource for sending and getting data
 	For now, should just print things as a test

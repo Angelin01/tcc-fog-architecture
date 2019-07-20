@@ -14,7 +14,7 @@ async def main(host: str, uri: str, method: coap.Code = coap.GET, payload: dict 
 
 	request = coap.Message(code=method, uri=f'coap://{host}/{uri}', payload=compressed_payload)
 
-	print(f'Sending request to {uri} with method {method} and payload {compressed_payload}')
+	print(f'Sending request to {uri} with method {method} and payload "{compressed_payload}"')
 	try:
 		response = await protocol.request(request).response
 	except Exception as e:
