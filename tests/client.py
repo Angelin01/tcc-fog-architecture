@@ -5,14 +5,14 @@ from gzip import compress
 from sys import argv, exit
 
 
-async def main(host: str, uri: str, method: coap.Code = coap.GET, payload: dict = None):
+async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: dict = None):
 	compressed_payload = compress(bytes(json.dumps(payload, separators=(',', ':'), ensure_ascii=True), 'ascii'), 9) if payload else ''
 
 	protocol = await coap.Context.create_client_context()
 
-	uri = f'coap://{host}/{uri}'
+	uri = f'coap://{host}/{resource}'
 
-	request = coap.Message(code=method, uri=f'coap://{host}/{uri}', payload=compressed_payload)
+	request = coap.Message(code=method, uri=uri, payload=compressed_payload)
 
 	print(f'Sending request to {uri} with method {method} and payload "{compressed_payload}"')
 	try:
@@ -22,7 +22,7 @@ async def main(host: str, uri: str, method: coap.Code = coap.GET, payload: dict 
 		print(e)
 		exit(1)
 
-	print(f'Response code: {response.code}'
+	print(f'Response code: {response.code}\n'
 	      f'Payload: {response.payload}')
 
 
@@ -37,11 +37,11 @@ if __name__ == '__main__':
 		exit(1)
 	HOST = HOST.rstrip('/')
 
-	URI = argv[2]
-	if not isinstance(URI, str):
-		print('Invalid uri, must be a str')
+	RESOURCE = argv[2]
+	if not isinstance(RESOURCE, str):
+		print('Invalid resource, must be a str')
 		exit(1)
-	URI = URI.lstrip('/')
+	RESOURCE = RESOURCE.lstrip('/')
 
 	METHOD = coap.GET
 	if len(argv) >= 4:
@@ -69,4 +69,4 @@ if __name__ == '__main__':
 				print(f'{argv[4]} is not a valid JSON string or JSON file')
 				exit(1)
 
-	asyncio.run(main(HOST, URI, METHOD, PAYLOAD))
+	asyncio.run(main(HOST, RESOURCE, METHOD, PAYLOAD))
