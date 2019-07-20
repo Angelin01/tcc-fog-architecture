@@ -1,7 +1,9 @@
-from aiocoap import resource, Message
+import json
+from gzip import compress, decompress
+import aiocoap as coap
 
 
-class GenericResource(resource.Resource):
+class GenericResource(coap.resource.Resource):
 	"""
 	Generic Resource for sending and getting data
 	For now, should just print things as a test
@@ -12,8 +14,12 @@ class GenericResource(resource.Resource):
 
 	async def render_get(self, request):
 		print(f'Received request of type {type(request)}')
-		print(f'Returning current content: {self.content}')
-		return Message(payload=self.content)
+		print(request)
+		print(f'Returning current content: {self._content}')
+		return coap.Message(payload=self._content)
 
 	async def render_post(self, request):
-		pass
+		print(f'Received request of type {type(request)}')
+		print(request)
+		self._content = request.payload
+		return coap.Message(code=coap.CHANGED)
