@@ -5,7 +5,7 @@ from gzip import compress
 from sys import argv, exit
 
 
-async def main(host: str, uri: str, method: coap.Code = coap.Code.GET, payload: dict = None):
+async def main(host: str, uri: str, method: coap.Code = coap.GET, payload: dict = None):
 	compressed_payload = compress(bytes(json.dumps(payload, separators=(',', ':'), force_ascii=True), 'ascii'), 9) if payload else ''
 
 	protocol = await coap.Context.create_client_context()
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 		exit(1)
 	URI = URI.lstrip('/')
 
-	METHOD = None
+	METHOD = coap.GET
 	if len(argv) >= 4:
 		if argv[3] == 'get' or argv[3] == 'GET':
 			METHOD = coap.GET
@@ -57,7 +57,7 @@ if __name__ == '__main__':
 			print(f'Invalid method {argv[3]}, use GET POST PUT or DELETE')
 			exit(1)
 
-	PAYLOAD = None
+	PAYLOAD = ''
 	if len(argv) >= 5:
 		try:
 			PAYLOAD = json.loads(argv[4])
