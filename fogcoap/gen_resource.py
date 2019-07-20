@@ -9,7 +9,7 @@ class GenericResource(resource.Resource):
 	Generic Resource for sending and getting data
 	For now, should just print things as a test
 	"""
-	def __init__(self, structure: tuple):
+	def __init__(self):
 		super().__init__()
 		self._content = b''
 
