@@ -1,4 +1,4 @@
-from aiocoap import resource
+from aiocoap import resource, Message
 
 
 class GenericResource(resource.Resource):
@@ -8,9 +8,12 @@ class GenericResource(resource.Resource):
 	"""
 	def __init__(self, structure: tuple):
 		super().__init__()
+		self._content = b''
 
 	async def render_get(self, request):
-		pass
+		print(f'Received request of type {type(request)}')
+		print(f'Returning current content: {self.content}')
+		return Message(payload=self.content)
 
 	async def render_post(self, request):
 		pass
