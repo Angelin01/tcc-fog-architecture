@@ -15,6 +15,7 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 	request = coap.Message(code=method, uri=uri, payload=compressed_payload)
 
 	print(f'Sending request to {uri} with method {method} and payload "{compressed_payload}"')
+
 	try:
 		response = await protocol.request(request).response
 	except Exception as e:
@@ -56,6 +57,7 @@ if __name__ == '__main__':
 		else:
 			print(f'Invalid method {argv[3]}, use GET POST PUT or DELETE')
 			exit(1)
+
 
 	PAYLOAD = ''
 	if len(argv) >= 5:
