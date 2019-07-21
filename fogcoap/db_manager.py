@@ -10,12 +10,23 @@ GDR = NewType('GenDatetimeRange', Union[Tuple[str, str], Tuple[int, int], Tuple[
 
 
 class DatabaseManager:
+	"""
+	Abstraction class for interacting with the MongoDB.
+	"""
 	_ClientRegistry = 'client_registry'
 	_ClientNameIndex = 'name_index'
 	_TypeMetadata = 'type_metadata'
 	_Data = 'data'
 
 	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warn_similarities: bool = True) -> None:
+		"""
+		Instances and connects a DatabaseManager to a MongoDB.
+		:param database: The database name to use.
+		:param host: The optional host to connect to, defaults to `localhost`.
+		:param port: The optional port to connect to, defaults to `27017`.
+		:param warn_similarities: When set to true, the Manager will throw warning when creating datatypes or registering clients with similar
+		                          names to ones previously created.
+		"""
 		self._client = pymongo.MongoClient(host, port)
 		try:
 			# The ismaster command is cheap and does not require auth.
@@ -33,6 +44,11 @@ class DatabaseManager:
 		self.warn_similarities = warn_similarities
 
 	def register_client(self, client: str) -> ObjectId:
+		"""
+		Registers a client on the database.
+		:param client: The client's name.
+		:return: The ObjectId for the client in the database.
+		"""
 		similar_names = 0
 		if self.warn_similarities:
 			similar_names = self._client_registry.count_documents({'name': re.compile(client, re.IGNORECASE)})
