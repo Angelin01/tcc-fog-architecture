@@ -1,4 +1,5 @@
 import pymongo
+from pymongo.errors import ConnectionFailure
 from bson.objectid import ObjectId
 from datetime import datetime
 from typing import Union, Tuple, NewType
@@ -8,8 +9,23 @@ GDR = NewType('GenDatetimeRange', Union[Tuple[str, str], Tuple[int, int], Tuple[
 
 
 class DatabaseManager:
-	def __init__(self, database: str) -> None:
-		pass
+	_ClientRegistry = 'client_registry'
+	_TypeMetadata = 'type_metadata'
+	_Data = 'data'
+
+	def __init__(self, database: str, host: str = 'localhost', port: int = 27017) -> None:
+		self._client = pymongo.MongoClient(host, port)
+		try:
+			# The ismaster command is cheap and does not require auth.
+			self._client.admin.command('ismaster')
+		except ConnectionFailure:
+			print(f'Database connection to {host}:{port} failed', flush=True)
+			raise
+
+		self._database = self._client[database]
+		self._client_registry = self._database[self._ClientRegistry]
+		self._type_metadata = self._database[self._TypeMetadata]
+		self._data = self._database[self._Data]
 
 	def register_client(self, client: str) -> bool:
 		pass
