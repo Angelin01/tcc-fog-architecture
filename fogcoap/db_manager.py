@@ -28,7 +28,8 @@ class DatabaseManager:
 		self._data = self._database[self._Data]
 
 	def register_client(self, client: str) -> bool:
-		pass
+		if self._client_registry.count_documents({'name': client}, limit=1) != 0:
+			self._client_registry.insert_one({'name': client})
 
 	def register_datatype(self, name: str, storage_type: Union[int, float, complex, str],
 	                      unit: str = None, valid_bounds: tuple = None, alert_thresholds: tuple = None) -> bool:
