@@ -1,4 +1,5 @@
 import pymongo
+import re
 from pymongo.errors import ConnectionFailure
 from bson.objectid import ObjectId
 from datetime import datetime
@@ -13,7 +14,7 @@ class DatabaseManager:
 	_TypeMetadata = 'type_metadata'
 	_Data = 'data'
 
-	def __init__(self, database: str, host: str = 'localhost', port: int = 27017) -> None:
+	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warn_similarities: bool = True) -> None:
 		self._client = pymongo.MongoClient(host, port)
 		try:
 			# The ismaster command is cheap and does not require auth.
@@ -26,10 +27,17 @@ class DatabaseManager:
 		self._client_registry = self._database[self._ClientRegistry]
 		self._type_metadata = self._database[self._TypeMetadata]
 		self._data = self._database[self._Data]
+		self.warn_similarities = warn_similarities
 
-	def register_client(self, client: str) -> bool:
+	def register_client(self, client: str) -> Union[bool, ObjectId]:
 		if self._client_registry.count_documents({'name': client}, limit=1) != 0:
-			self._client_registry.insert_one({'name': client})
+			if self.warn_similarities:
+				similar_names = self._client_registry.count_documents({'name': re.compile(client, re.IGNORECASE)})
+				if similar_names > 0:
+					print(f'Warning: there are {similar_names} clients with similar names to {client}')
+			return self._client_registry.insert_one({'name': client}).inserted_id
+
+		return False
 
 	def register_datatype(self, name: str, storage_type: Union[int, float, complex, str],
 	                      unit: str = None, valid_bounds: tuple = None, alert_thresholds: tuple = None) -> bool:
