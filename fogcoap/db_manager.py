@@ -26,8 +26,7 @@ class DatabaseManager:
 		self._database = self._client[database]
 
 		self._client_registry = self._database[self._ClientRegistry]
-		if self._ClientNameIndex not in self._client_registry.index_information():
-			self._client_registry.create_index('name', name=self._ClientNameIndex, unique=True)
+		self._client_registry.create_index('name', name=self._ClientNameIndex, unique=True)
 
 		self._type_metadata = self._database[self._TypeMetadata]
 		self._data = self._database[self._Data]
@@ -41,7 +40,7 @@ class DatabaseManager:
 		obj_id = self._client_registry.insert_one({'name': client}).inserted_id
 		if similar_names > 0:
 			print(f'Warning: there are {similar_names} clients with similar names to {client}')
-		
+
 		return obj_id
 
 	def register_datatype(self, name: str, storage_type: Union[int, float, complex, str],
