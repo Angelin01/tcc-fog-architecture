@@ -2,6 +2,7 @@ import pymongo
 import re
 import logging
 from pymongo.errors import ConnectionFailure, DuplicateKeyError
+from enum import Enum
 from bson.objectid import ObjectId
 from datetime import datetime
 from typing import Union, Tuple, NewType
@@ -9,6 +10,20 @@ from typing import Union, Tuple, NewType
 
 GDR = NewType('GenDatetimeRange', Union[Tuple[str, str], Tuple[int, int], Tuple[datetime, datetime]])
 database_logger = logging.Logger(__name__)
+
+
+class StorageType(Enum):
+	INT = 0
+	FLOAT = 1
+	STR = 2
+	ARRAY = 3
+	
+storage_type_dict = {
+	StorageType.INT: int,
+	StorageType.FLOAT: float,
+	StorageType.STR: str,
+	StorageType.ARRAY: list
+}
 
 
 class DatabaseManager:
@@ -76,6 +91,7 @@ class DatabaseManager:
 		"""
 		# ======================= #
 		# Check for similarities if needed #
+		# TODO Better similarity check
 		similar_names = 0
 		if self.warn_similarities:
 			similar_names = self._client_registry.count_documents({'name': re.compile(client, re.IGNORECASE)})
@@ -99,9 +115,38 @@ class DatabaseManager:
 
 		return obj_id
 
-	def register_datatype(self, name: str, storage_type: Union[int, float, complex, str],
-	                      unit: str = None, valid_bounds: tuple = None, alert_thresholds: tuple = None) -> bool:
-		pass
+	def register_datatype(self, name: str, storage_type: StorageType, unit: str = None,
+	                      valid_bounds: tuple = None, alert_thresholds: tuple = None) -> ObjectId:
+		# ======================= #
+		# Check for similarities if needed #
+		# TODO Better similarity check
+		similar_names = 0
+		if self.warn_similarities:
+			similar_names = self._type_metadata.count_documents({'name': re.compile(name, re.IGNORECASE)})
+		# ======================= #
+
+		# ======================= #
+		# Actual insert
+		try:
+			obj_id = self._type_metadata.insert_one({
+				'name': name,
+				'storage_type': storage_type.value,
+				'unit': unit,
+				'valid_bounds': valid_bounds,
+				'alert_thresholds': alert_thresholds
+			}).inserted_id
+		except DuplicateKeyError:
+			database_logger.error(f'Failed to add type {name} as it\'s a duplicate')
+			raise
+		database_logger.info(f'Registered new type {name} with id {obj_id}')
+		
+		# Warn for similarities if necessary #
+		if similar_names > 0:
+			database_logger.warning(f'Warning: there are {similar_names} types with similar names to {name}')
+		# ======================= #
+	
+		return obj_id
+	
 
 	def insert_data(self, client: Union[str, ObjectId], data: dict) -> bool:
 		pass
