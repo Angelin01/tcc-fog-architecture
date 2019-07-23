@@ -223,8 +223,6 @@ class DatabaseManager:
 				if thresholds[0] is not None and thresholds[0] > bounds[1] or \
 				   thresholds[1] is not None and thresholds[1] > bounds[1]:
 					raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
-			
-				
 
 	@staticmethod
 	def set_logging_level(level: Union[logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]) -> None:
