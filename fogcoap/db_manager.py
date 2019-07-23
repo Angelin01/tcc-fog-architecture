@@ -110,13 +110,23 @@ class DatabaseManager:
 		# ======================= #
 		# Warn for similarities if necessary #
 		if similar_names > 0:
-			database_logger.warning(f'Warning: there are {similar_names} clients with similar names to {client}')
+			database_logger.warning(f'There are {similar_names} clients with similar names to {client}')
 		# ======================= #
 
 		return obj_id
 
 	def register_datatype(self, name: str, storage_type: StorageType, unit: str = None,
 	                      valid_bounds: tuple = None, alert_thresholds: tuple = None) -> ObjectId:
+		# Check if type is in enum, will not be needed in Python 3.8
+		if storage_type not in StorageType:
+			raise TypeError(f'Invalid storage_type when registering type {name}')
+
+		# Verify bounds and alerts
+		try:
+			self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[storage_type])
+		except (ValueError, TypeError) as e:
+			raise Exception(f'Invalid bounds when registering type {name}') from e
+		
 		# ======================= #
 		# Check for similarities if needed #
 		# TODO Better similarity check
@@ -140,13 +150,17 @@ class DatabaseManager:
 			raise
 		database_logger.info(f'Registered new type {name} with id {obj_id}')
 		
+		# Verify if no bounds were set for strs
+		if storage_type is StorageType.STR and \
+		   (valid_bounds is not None or alert_thresholds is not None):
+			database_logger.warning(f'Bounds were set for type {name} but type is STR, they will be ignored')
+		
 		# Warn for similarities if necessary #
 		if similar_names > 0:
-			database_logger.warning(f'Warning: there are {similar_names} types with similar names to {name}')
+			database_logger.warning(f'There are {similar_names} types with similar names to {name}')
 		# ======================= #
 	
 		return obj_id
-	
 
 	def insert_data(self, client: Union[str, ObjectId], data: dict) -> bool:
 		pass
@@ -157,6 +171,26 @@ class DatabaseManager:
 
 	def query_data_type(self, datatype: Union[str, ObjectId] = None, date_range: GDR = None) -> dict:
 		pass
+	
+	@staticmethod
+	def _verify_bounds(bounds, thresholds, expected_type):
+		# Check bounds first
+		if bounds is not None and len(bounds) != 2:
+			raise ValueError('Expected 2 values in bounds')
+		
+		if not (isinstance(bounds[0], expected_type) or bounds[0] is None) or \
+		   not (isinstance(bounds[1], expected_type) or bounds[1] is None):
+			raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.__name__}')
+		
+		# Check thresholds
+		if thresholds is not None and len(thresholds) != 2:
+			raise ValueError('Expected 2 values in thresholds')
+		
+		if not (isinstance(thresholds[0], expected_type) or thresholds[0] is None) or \
+		   not (isinstance(thresholds[1], expected_type) or thresholds[1] is None):
+			raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
+		
+		
 
 	@staticmethod
 	def set_logging_level(level: Union[logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]) -> None:
