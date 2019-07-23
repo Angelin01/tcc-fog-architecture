@@ -33,6 +33,7 @@ class DatabaseManager:
 	_ClientRegistry = 'client_registry'
 	_ClientNameIndex = 'name_index'
 	_TypeMetadata = 'type_metadata'
+	_TypeMetadataNameIndex = 'type_index'
 	_Data = 'data'
 
 	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warn_similarities: bool = True) -> None:
@@ -77,6 +78,7 @@ class DatabaseManager:
 		database_logger.debug('Created index on client names')
 
 		self._type_metadata = self._database[self._TypeMetadata]
+		self._type_metadata.create_index('name', name=self._TypeMetadataNameIndex, unique=True)
 		self._data = self._database[self._Data]
 		
 		# ======================= #
@@ -128,11 +130,19 @@ class DatabaseManager:
 			if array_type not in StorageType or array_type is StorageType.ARRAY:  # Same as above, check for enum won't be needed in 3.8
 				raise TypeError('Invalid array storage type, must be INT, FLOAT or STR')
 
-		# Verify bounds and alerts
-		try:
-			self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[array_type if storage_type is StorageType.ARRAY else storage_type])
-		except (ValueError, TypeError) as e:
-			raise Exception(f'Invalid bounds when registering type {name}') from e
+		# Verify bounds and alerts, except for strs
+		if storage_type is not StorageType.STR:
+			try:
+				self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[array_type if storage_type is StorageType.ARRAY else storage_type])
+			except (ValueError, TypeError) as e:
+				raise Exception(f'Invalid bounds when registering type {name}') from e
+		else:
+			if valid_bounds is not None:
+				valid_bounds = None
+				database_logger.warning('Can\'t set bounds for STRs, they will be ignored')
+			if alert_thresholds is not None:
+				alert_thresholds = None
+				database_logger.warning('Can\'t set alert thresholds for STRs, they will be ignored')
 		
 		# ======================= #
 		# Check for similarities if needed #
@@ -157,11 +167,6 @@ class DatabaseManager:
 			raise
 		database_logger.info(f'Registered new type {name} with id {obj_id}')
 		
-		# Verify if no bounds were set for strs
-		if storage_type is StorageType.STR and \
-		   (valid_bounds is not None or alert_thresholds is not None):
-			database_logger.warning(f'Bounds were set for type {name} but type is STR, they will be ignored')
-		
 		# Warn for similarities if necessary #
 		if similar_names > 0:
 			database_logger.warning(f'There are {similar_names} types with similar names to {name}')
@@ -181,7 +186,11 @@ class DatabaseManager:
 	
 	@staticmethod
 	def _verify_bounds(bounds, thresholds, expected_type):
-		# Check bounds first
+		# Check that type isn't strings
+		if expected_type is not int or expected_type is not float:
+			raise TypeError('Bounds and Thresholds can only be ints or floats')
+		
+		# Check bounds object, types and values
 		if bounds is not None and len(bounds) != 2:
 			raise ValueError('Expected 2 values in bounds')
 		
@@ -189,7 +198,10 @@ class DatabaseManager:
 		   not (isinstance(bounds[1], expected_type) or bounds[1] is None):
 			raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.__name__}')
 		
-		# Check thresholds
+		if bounds[0] is not None and bounds[1] is not None and bounds[0] >= bounds[1]:
+			raise ValueError(f'Low bound {bounds[0]} cannot be higher than high bound {bounds[1]}')
+		
+		# Check thresholds object, types and values
 		if thresholds is not None and len(thresholds) != 2:
 			raise ValueError('Expected 2 values in thresholds')
 		
@@ -197,9 +209,22 @@ class DatabaseManager:
 		   not (isinstance(thresholds[1], expected_type) or thresholds[1] is None):
 			raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
 		
+		if thresholds[0] is not None and thresholds[1] is not None and thresholds[0] >= thresholds[1]:
+			raise ValueError(f'Low alert threshold {thresholds[0]} cannot be higher than high alert threshold {thresholds[1]}')
 		
-		
-		
+		# Check if thresholds are valid
+		if bounds is not None:
+			if bounds[0] is not None:
+				if thresholds[0] is not None and thresholds[0] < bounds[0] or \
+				   thresholds[1] is not None and thresholds[1] < bounds[0]:
+					raise ValueError(f'Alert thresholds can\'t be lower than low valid bound {bounds[0]}')
+			
+			if bounds[1] is not None:
+				if thresholds[0] is not None and thresholds[0] > bounds[1] or \
+				   thresholds[1] is not None and thresholds[1] > bounds[1]:
+					raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
+			
+				
 
 	@staticmethod
 	def set_logging_level(level: Union[logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]) -> None:
