@@ -115,15 +115,22 @@ class DatabaseManager:
 
 		return obj_id
 
-	def register_datatype(self, name: str, storage_type: StorageType, unit: str = None,
+	def register_datatype(self, name: str, storage_type: StorageType, array_type: StorageType = None, unit: str = None,
 	                      valid_bounds: tuple = None, alert_thresholds: tuple = None) -> ObjectId:
 		# Check if type is in enum, will not be needed in Python 3.8
 		if storage_type not in StorageType:
 			raise TypeError(f'Invalid storage_type when registering type {name}')
+		
+		if storage_type is StorageType.ARRAY:
+			if array_type is None:
+				raise TypeError('If storage_type is ARRAY, array_type must be set')
+			
+			if array_type not in StorageType or array_type is StorageType.ARRAY:  # Same as above, check for enum won't be needed in 3.8
+				raise TypeError('Invalid array storage type, must be INT, FLOAT or STR')
 
 		# Verify bounds and alerts
 		try:
-			self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[storage_type])
+			self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[array_type if storage_type is StorageType.ARRAY else storage_type])
 		except (ValueError, TypeError) as e:
 			raise Exception(f'Invalid bounds when registering type {name}') from e
 		
@@ -189,6 +196,8 @@ class DatabaseManager:
 		if not (isinstance(thresholds[0], expected_type) or thresholds[0] is None) or \
 		   not (isinstance(thresholds[1], expected_type) or thresholds[1] is None):
 			raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
+		
+		
 		
 		
 
