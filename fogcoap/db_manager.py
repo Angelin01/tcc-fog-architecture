@@ -119,6 +119,20 @@ class DatabaseManager:
 
 	def register_datatype(self, name: str, storage_type: StorageType, array_type: StorageType = None, unit: str = None,
 	                      valid_bounds: tuple = None, alert_thresholds: tuple = None) -> ObjectId:
+		"""
+		Register a type of data that will be inserted into the DB.
+		Unregistered types or data that does not match the requirements will be rejected.
+		
+		:param name: The name of the data to be stored, for example "temperature".
+		:param storage_type: What actual type the data is: `INT`, `FLOAT`, `STR` or an `ARRAY`, use the `StorageType` enum.
+		:param array_type: If `storage_type` is ARRAY, a type of data must be set for said array. Cannot be `ARRAY`.
+		:param unit: Optional unit like "seconds" or "s", as a string, to save with the rest of the data.
+		:param valid_bounds: An optional tuple or list of 2 elements that dictates the minimum and maximum values, respectively,
+		of the data to be stored. Both bounds are optional, being ignored if passed as `None`.
+		:param alert_thresholds: An optional tuple or list of 2 elements for alerts. If an inserted value is outside of this range, an alert
+		will be generated. Both bounds are optional, being ignored if passed as `None`.
+		:return: The ObjectId for the type in the database.
+		"""
 		# Check if type is in enum, will not be needed in Python 3.8
 		if storage_type not in StorageType:
 			raise TypeError(f'Invalid storage_type when registering type {name}')
