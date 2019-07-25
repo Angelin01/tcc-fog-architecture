@@ -18,11 +18,18 @@ class StorageType(Enum):
 	STR = 2
 	ARRAY = 3
 	
+
 storage_type_dict = {
 	StorageType.INT: int,
 	StorageType.FLOAT: float,
 	StorageType.STR: str,
 	StorageType.ARRAY: list
+}
+type_storage_dict = {
+	int: StorageType.INT,
+	float: StorageType.FLOAT,
+	str: StorageType.STR,
+	list: StorageType.ARRAY
 }
 
 
@@ -192,6 +199,8 @@ class DatabaseManager:
 		return obj_id
 
 	def insert_data(self, client: Union[str, ObjectId], data: dict) -> ObjectId:
+		# TODO: Extra logging
+		# TODO: Docstring
 		# ======================= #
 		# Check client #
 		client_info = None
@@ -205,7 +214,7 @@ class DatabaseManager:
 		# ======================= #
 		
 		# ======================= #
-		# Get values from data #
+		# Get values from dict #
 		data_name = data.get('n') or data.get('name')
 		if not data_name:
 			raise InvalidData('Invalid data format: data name "n" or "name" not specified')
@@ -222,12 +231,34 @@ class DatabaseManager:
 			data_datetime = self._parse_timestamp(data_timestamp)
 		except InvalidData:
 			raise
+		# ======================= #
 		
-		# try:
-		# 	datatype_info = self._type_metadata.find_one({'name': data_name})
-		# 	client_data = self._data[client_info['_id']]
-		# except KeyError:
-		# 	raise InvalidData('Invalid data format')
+		# ======================= #
+		# Verify the received data #
+		datatype_info = self._type_metadata.find_one({'name': data_name})
+		if not datatype_info:
+			raise InvalidData('Data name does not correspond to any registered data type')
+		
+		try:
+			value_type = type_storage_dict[type(data_value)]
+			if value_type is not StorageType.ARRAY:
+				if value_type.value != datatype_info['storage_type']:
+					raise InvalidData('Value type is different from the registered data type')
+				
+				if value_type is not StorageType.STR:
+					if data_value < datatype_info['valid_bounds'][0] or data_value > datatype_info['valid_bounds'][1]:
+						raise InvalidData('Value is outside the valid bounds')
+					###########################
+					# TODO: Implement Alerts
+					###########################
+				
+			else:  # TODO: check arrays
+				pass
+		except KeyError:
+			raise InvalidData('Value type is not a valid type, expected int, float, str or list')
+		
+		# TODO: Warning if timestamp is too far away from current server timestamp?
+		return self._data[client_info['_id']][datatype_info['_id']].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: GDR = None) -> dict:
@@ -292,7 +323,7 @@ class DatabaseManager:
 					raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
 
 	@staticmethod
-	def set_logging_level(level: Union[logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]) -> None:
+	def set_logging_level(level: int) -> None:
 		database_logger.setLevel(level)
 
 
