@@ -188,7 +188,16 @@ class DatabaseManager:
 	
 		return obj_id
 
-	def insert_data(self, client: Union[str, ObjectId], data: dict) -> bool:
+	def insert_data(self, client: Union[str, ObjectId], data: dict) -> ObjectId:
+		client_data = None
+		if isinstance(client, str):
+			client_data = self._client_registry.find_one({'name': client})
+		elif isinstance(client, ObjectId):
+			client_data = self._client_registry.find_one({'_id': client})
+		
+		if not client_data:
+			raise ValueError('Invalid client')
+		
 		pass
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
