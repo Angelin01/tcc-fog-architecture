@@ -133,6 +133,8 @@ class DatabaseManager:
 		will be generated. Both bounds are optional, being ignored if passed as `None`.
 		:return: The ObjectId for the type in the database.
 		"""
+		# ======================= #
+		# Validate received values #
 		# Check if type is in enum, will not be needed in Python 3.8
 		if storage_type not in StorageType:
 			raise TypeError(f'Invalid storage_type when registering type {name}')
@@ -157,6 +159,7 @@ class DatabaseManager:
 			if alert_thresholds is not None:
 				alert_thresholds = None
 				database_logger.warning('Can\'t set alert thresholds for STRs, they will be ignored')
+		# ======================= #
 		
 		# ======================= #
 		# Check for similarities if needed #
@@ -189,16 +192,42 @@ class DatabaseManager:
 		return obj_id
 
 	def insert_data(self, client: Union[str, ObjectId], data: dict) -> ObjectId:
-		client_data = None
+		# ======================= #
+		# Check client #
+		client_info = None
 		if isinstance(client, str):
-			client_data = self._client_registry.find_one({'name': client})
+			client_info = self._client_registry.find_one({'name': client})
 		elif isinstance(client, ObjectId):
-			client_data = self._client_registry.find_one({'_id': client})
+			client_info = self._client_registry.find_one({'_id': client})
 		
-		if not client_data:
+		if not client_info:
 			raise InvalidClient('Specified client has not been registered')
+		# ======================= #
 		
-		pass
+		# ======================= #
+		# Get values from data #
+		data_name = data.get('n') or data.get('name')
+		if not data_name:
+			raise InvalidData('Invalid data format: data name "n" or "name" not specified')
+		
+		data_value = data.get('v') or data.get('value')
+		if not data_value:
+			raise InvalidData('Invalid data format: data value "v" or "value" not specified')
+		
+		data_timestamp = data.get('t') or data.get('time')
+		if not data_timestamp:
+			raise InvalidData('Invalid data format: data value "v" or "value" not specified')
+		
+		try:
+			data_datetime = self._parse_timestamp(data_timestamp)
+		except InvalidData:
+			raise
+		
+		# try:
+		# 	datatype_info = self._type_metadata.find_one({'name': data_name})
+		# 	client_data = self._data[client_info['_id']]
+		# except KeyError:
+		# 	raise InvalidData('Invalid data format')
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: GDR = None) -> dict:
@@ -206,6 +235,21 @@ class DatabaseManager:
 
 	def query_data_type(self, datatype: Union[str, ObjectId] = None, date_range: GDR = None) -> dict:
 		pass
+	
+	@staticmethod
+	def _parse_timestamp(t):
+		try:
+			if isinstance(t, datetime):
+				return t
+			if isinstance(t, str):
+				return datetime.fromisoformat(t)
+			if isinstance(t, int):
+				return datetime.fromtimestamp(t)
+			
+		except ValueError:
+			raise InvalidData('Timestamp format is invalid. Expected datetime object or ISO str or int timestamp')
+		raise InvalidData('Timestamp type is invalid, expected datetime object, str or int')
+		
 	
 	@staticmethod
 	def _verify_bounds(bounds, thresholds, expected_type):
