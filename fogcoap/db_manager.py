@@ -149,7 +149,7 @@ class DatabaseManager:
 			try:
 				self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[array_type if storage_type is StorageType.ARRAY else storage_type])
 			except (ValueError, TypeError) as e:
-				raise Exception(f'Invalid bounds when registering type {name}') from e
+				raise Exception(f'Invalid bounds or thresholds when registering type {name}') from e
 		else:
 			if valid_bounds is not None:
 				valid_bounds = None
@@ -196,7 +196,7 @@ class DatabaseManager:
 			client_data = self._client_registry.find_one({'_id': client})
 		
 		if not client_data:
-			raise ValueError('Invalid client')
+			raise InvalidClient('Specified client has not been registered')
 		
 		pass
 
@@ -250,3 +250,13 @@ class DatabaseManager:
 	@staticmethod
 	def set_logging_level(level: Union[logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]) -> None:
 		database_logger.setLevel(level)
+
+
+class InvalidData(Exception):
+	"""Raised when the received data's format is invalid"""
+	pass
+
+
+class InvalidClient(Exception):
+	"""Raised when an unregisted client is specified when sending data"""
+	pass
