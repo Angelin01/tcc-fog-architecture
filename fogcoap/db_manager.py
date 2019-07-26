@@ -284,8 +284,25 @@ class DatabaseManager:
 	                      date_range: GDR = None) -> dict:
 		pass
 
-	def query_data_type(self, datatype: Union[str, ObjectId] = None, date_range: GDR = None) -> dict:
+	def query_data_type(self, datatype: Union[str, ObjectId], date_range: GDR = None) -> dict:
 		pass
+	
+	def query_all(self, date_range: GDR = None) -> dict:
+		# TODO: Docstring
+		# TODO: Some comments explaining things, oh jesus
+		# TODO: Actually use the data_range
+		all_data = {}
+		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\.'}}):
+			_, client, datatype = coll.split('.')
+			if not all_data.get(client):
+				all_data[client] = {}
+			
+			if not all_data[client].get(datatype):
+				all_data[client][datatype] = {}
+			
+			all_data[client][datatype] = list(self._database[coll].find({}))
+			
+		return all_data
 	
 	@staticmethod
 	def _parse_timestamp(t):
