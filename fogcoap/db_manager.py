@@ -182,6 +182,7 @@ class DatabaseManager:
 			obj_id = self._type_metadata.insert_one({
 				'name': name,
 				'storage_type': storage_type.value,
+				'array_type': array_type,
 				'unit': unit,
 				'valid_bounds': valid_bounds,
 				'alert_thresholds': alert_thresholds
@@ -241,10 +242,10 @@ class DatabaseManager:
 		
 		try:
 			value_type = type_storage_dict[type(data_value)]
+			if value_type.value != datatype_info['storage_type']:
+				raise InvalidData('Value type is different from the registered data type')
+			
 			if value_type is not StorageType.ARRAY:
-				if value_type.value != datatype_info['storage_type']:
-					raise InvalidData('Value type is different from the registered data type')
-				
 				if value_type is not StorageType.STR:
 					if data_value < datatype_info['valid_bounds'][0] or data_value > datatype_info['valid_bounds'][1]:
 						raise InvalidData('Value is outside the valid bounds')
@@ -253,7 +254,17 @@ class DatabaseManager:
 					###########################
 				
 			else:  # TODO: check arrays
-				pass
+				for v in data_value:
+					v_type = type_storage_dict[type(v)]
+					if v_type.value != datatype_info['array_type']:
+						raise InvalidData('Value type in list is different from the registered array type')
+					if v_type is not StorageType.STR:
+						if v < datatype_info['valid_bounds'][0] or v > datatype_info['valid_bounds'][1]:
+							raise InvalidData('Value in list is outside the valid bounds')
+					###########################
+					# TODO: Implement Alerts
+					###########################
+					
 		except KeyError:
 			raise InvalidData('Value type is not a valid type, expected int, float, str or list')
 		
