@@ -43,14 +43,15 @@ class DatabaseManager:
 	_TypeMetadataNameIndex = 'type_index'
 	_Data = 'data'
 
-	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warn_similarities: bool = True) -> None:
+	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warnings: bool = True) -> None:
 		"""
 		Instances and connects a DatabaseManager to a MongoDB.
 		:param database: The database name to use.
 		:param host: The optional host to connect to, defaults to `localhost`.
 		:param port: The optional port to connect to, defaults to `27017`.
-		:param warn_similarities: When set to true, the Manager will throw warning when creating datatypes or registering clients with similar
-		                          names to ones previously created.
+		:param warnings: When set to true, the Manager will throw warnings when creating datatypes or registering clients with similar
+		                          names to ones previously created, or when abnormalies happen, for example when data with a timestamp distant from
+		                          the server's is received.
 		"""
 		# Setup logger #
 		# ======================= #
@@ -58,7 +59,7 @@ class DatabaseManager:
 		handler = logging.StreamHandler()
 		handler.setFormatter(formatter)
 
-		if warn_similarities:
+		if warnings:
 			handler.setLevel(logging.WARNING)
 		else:
 			handler.setLevel(logging.ERROR)
@@ -90,7 +91,7 @@ class DatabaseManager:
 		
 		# ======================= #
 		
-		self.warn_similarities = warn_similarities
+		self.warnings = warnings
 
 	def register_client(self, client: str) -> ObjectId:
 		"""
@@ -102,7 +103,7 @@ class DatabaseManager:
 		# Check for similarities if needed #
 		# TODO Better similarity check
 		similar_names = 0
-		if self.warn_similarities:
+		if self.warnings:
 			similar_names = self._client_registry.count_documents({'name': re.compile(client, re.IGNORECASE)})
 		# ======================= #
 
@@ -172,7 +173,7 @@ class DatabaseManager:
 		# Check for similarities if needed #
 		# TODO Better similarity check
 		similar_names = 0
-		if self.warn_similarities:
+		if self.warnings:
 			similar_names = self._type_metadata.count_documents({'name': re.compile(name, re.IGNORECASE)})
 		# ======================= #
 
@@ -253,7 +254,7 @@ class DatabaseManager:
 					# TODO: Implement Alerts
 					###########################
 				
-			else:  # TODO: check arrays
+			else:
 				for v in data_value:
 					v_type = type_storage_dict[type(v)]
 					if v_type.value != datatype_info['array_type']:
@@ -268,7 +269,15 @@ class DatabaseManager:
 		except KeyError:
 			raise InvalidData('Value type is not a valid type, expected int, float, str or list')
 		
-		# TODO: Warning if timestamp is too far away from current server timestamp?
+		if self.warnings:
+			time_diff = (data_datetime - datetime.utcnow()).seconds
+			if time_diff >= 900:  # 15 minutes, make it configurable later?
+				database_logger.warning(f'Data received from {client_info["name"]} has timestamp ahead of the server by {time_diff} seconds, '
+				                        f'either server or client is desynced')
+			elif time_diff <= 86400:  # 1 day, make it configurable later?
+				database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {-time_diff} seconds, '
+				                        f'either client is desynced or it was disconnected for a long time')
+			
 		return self._data[client_info['_id']][datatype_info['_id']].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
