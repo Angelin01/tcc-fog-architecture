@@ -291,10 +291,89 @@ class DatabaseManager:
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: GDR = None) -> dict:
-		pass
+		# TODO: Docstring
+		# ======================= #
+		# Check client #
+		client_info = None
+		if isinstance(client, str):
+			client_info = self._client_registry.find_one({'name': client})
+		elif isinstance(client, ObjectId):
+			client_info = self._client_registry.find_one({'_id': client})
+		
+		if not client_info:
+			raise InvalidClient('Specified client has not been registered')
+		client_filter = str(client_info['_id'])
+			
+		# ======================= #
+		# Check datatype #
+		if datatype:
+			datatype_info = None
+			if isinstance(datatype, str):
+				datatype_info = self._client_registry.find_one({'name': datatype})
+			elif isinstance(datatype, ObjectId):
+				datatype_info = self._client_registry.find_one({'_id': datatype})
+			
+			if not datatype_info:
+				raise InvalidData('Specified datatype has not been registered')
+			datatype_filter = str(datatype_info['_id'])
+		else:
+			datatype_filter = '.*'
+		# ======================= #
+		date_filter = self._setup_date_filter(date_range)
+		
+		all_data = {}
+		# Filter breaks down collections that start with the prefix for data
+		# The name format is "data.[CLIENT_ID].[DATATYPE_ID]"
+		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\.{client_filter}\.{datatype_filter}'}}):
+			_, client, datatype = coll.split('.')
+			
+			# Create the dicts for the client if it doesn't exist on the return yet
+			if not all_data.get(client):
+				all_data[client] = {}
+			
+			# Create the dicts for the datatype on the client if it doesn't exist on the return yet
+			if not all_data[client].get(datatype):
+				all_data[client][datatype] = {}
+			
+			# Convert the returns to a list and add it to the dict
+			all_data[client][datatype] = list(self._database[coll].find(date_filter))
+		
+		return all_data
 
 	def query_data_type(self, datatype: Union[str, ObjectId], date_range: GDR = None) -> dict:
-		pass
+		# TODO: Docstring
+		# ======================= #
+		# Check datatype #
+		datatype_info = None
+		if isinstance(datatype, str):
+			datatype_info = self._client_registry.find_one({'name': datatype})
+		elif isinstance(datatype, ObjectId):
+			datatype_info = self._client_registry.find_one({'_id': datatype})
+		
+		if not datatype_info:
+			raise InvalidData('Specified datatype has not been registered')
+		datatype_filter = str(datatype_info['_id'])
+		# ======================= #
+		date_filter = self._setup_date_filter(date_range)
+		
+		all_data = {}
+		# Filter breaks down collections that start with the prefix for data
+		# The name format is "data.[CLIENT_ID].[DATATYPE_ID]"
+		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\..*\.{datatype_filter}'}}):
+			_, client, datatype = coll.split('.')
+			
+			# Create the dicts for the client if it doesn't exist on the return yet
+			if not all_data.get(client):
+				all_data[client] = {}
+			
+			# Create the dicts for the datatype on the client if it doesn't exist on the return yet
+			if not all_data[client].get(datatype):
+				all_data[client][datatype] = {}
+			
+			# Convert the returns to a list and add it to the dict
+			all_data[client][datatype] = list(self._database[coll].find(date_filter))
+		
+		return all_data
 	
 	def query_all(self, date_range: GDR = None) -> dict:
 		"""
@@ -340,8 +419,9 @@ class DatabaseManager:
 	
 	@staticmethod
 	def _setup_date_filter(date_range: GDR) -> dict:
-		date_filter = {}
+		date_filter = None
 		if date_range is not None:
+			date_filter = {}
 			if len(date_range) != 2:
 				raise ValueError('Expected 2 values in date_range')
 			start_date = DatabaseManager._parse_timestamp(date_range[0]) if date_range[0] is not None else None
