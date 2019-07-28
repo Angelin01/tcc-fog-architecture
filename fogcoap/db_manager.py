@@ -201,8 +201,17 @@ class DatabaseManager:
 		return obj_id
 
 	def insert_data(self, client: Union[str, ObjectId], data: dict) -> ObjectId:
+		"""
+		Method for inserting data into the database.
+		:param client: Either the client name as a string or the client's `ObjectId` as returned by the `register_client` method.
+		:param data: A dictionary containing the data. Should contain 3 keys:
+		             "n" or "name": the name of the registered datatype.
+		             "v" or "value": the actual value of the data. Must match the unit type specified when registering the data.
+		             "t" or "time": A timestamp of when the data was collected. Can be an actual `int` timestamp, as the number of seconds since
+		                            1970-01-01 UTC, an ISO date formatted string or a Python `datetime` object.
+		:return: The ObjectID of the inserted data.
+		"""
 		# TODO: Extra logging
-		# TODO: Docstring
 		# ======================= #
 		# Check client #
 		client_info = None
