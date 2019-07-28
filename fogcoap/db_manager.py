@@ -291,7 +291,13 @@ class DatabaseManager:
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: GDR = None) -> dict:
-		# TODO: Docstring
+		"""
+		Queries the data for a specific client.
+		:param client: Either the `ObjectID` or the name of the registered client.
+		:param datatype: An optional `ObjectID` or the name of the registered datatype as a filter.
+		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
+		:return: A dict with all the data.
+		"""
 		# ======================= #
 		# Check client #
 		client_info = None
@@ -341,7 +347,12 @@ class DatabaseManager:
 		return all_data
 
 	def query_data_type(self, datatype: Union[str, ObjectId], date_range: GDR = None) -> dict:
-		# TODO: Docstring
+		"""
+		Queries the data for a specific datatype.
+		:param datatype: Either a `ObjectID` or the name of the registered datatype as a filter.
+		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
+		:return: A dict with all the data.
+		"""
 		# ======================= #
 		# Check datatype #
 		datatype_info = None
