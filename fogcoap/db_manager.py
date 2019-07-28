@@ -314,6 +314,21 @@ class DatabaseManager:
 			
 		return all_data
 	
+	def query_datatypes(self) -> list:
+		"""
+		Queries all the registered datatypes in the database.
+		:return: A list of datatypes on the database.
+		"""
+		# TODO: Add some filters?
+		return list(self._type_metadata.find())
+	
+	def query_clients(self) -> list:
+		"""
+		Queries all the registered clients in the database.
+		:return: A list of clients on the database.
+		"""
+		return list(self._client_registry.find())
+	
 	@staticmethod
 	def _setup_date_filter(date_range: GDR) -> dict:
 		date_filter = {}
