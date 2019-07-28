@@ -288,18 +288,28 @@ class DatabaseManager:
 		pass
 	
 	def query_all(self, date_range: GDR = None) -> dict:
-		# TODO: Docstring
-		# TODO: Some comments explaining things, oh jesus
+		"""
+		Returns all actual data in the database, not including the metadata for clients and datatypes.
+		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
+		:return: A dict with all the data.
+		"""
 		date_filter = self._setup_date_filter(date_range)
 		all_data = {}
+		
+		# Filter breaks down collections that start with the prefix for data
+		# The name format is "data.[CLIENT_ID].[DATATYPE_ID]"
 		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\.'}}):
 			_, client, datatype = coll.split('.')
+			
+			# Create the dicts for the client if it doesn't exist on the return yet
 			if not all_data.get(client):
 				all_data[client] = {}
 			
+			# Create the dicts for the datatype on the client if it doesn't exist on the return yet
 			if not all_data[client].get(datatype):
 				all_data[client][datatype] = {}
 			
+			# Convert the returns to a list and add it to the dict
 			all_data[client][datatype] = list(self._database[coll].find(date_filter))
 			
 		return all_data
