@@ -290,22 +290,7 @@ class DatabaseManager:
 	def query_all(self, date_range: GDR = None) -> dict:
 		# TODO: Docstring
 		# TODO: Some comments explaining things, oh jesus
-		date_filter = {}
-		if date_range is not None:
-			if len(date_range) != 2:
-				raise ValueError('Expected 2 values in date_range')
-			start_date = self._parse_timestamp(date_range[0]) if date_range[0] is not None else None
-			end_date = self._parse_timestamp(date_range[1]) if date_range[1] is not None else None
-			
-			if start_date is None and end_date is None:
-				raise ValueError('Either the start date or the end date must not be None')
-			
-			date_filter['datetime'] = {}
-			if start_date:
-				date_filter['datetime']['$gte'] = start_date
-			if end_date:
-				date_filter['datetime']['$lte'] = end_date
-		
+		date_filter = self._setup_date_filter(date_range)
 		all_data = {}
 		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\.'}}):
 			_, client, datatype = coll.split('.')
@@ -318,6 +303,25 @@ class DatabaseManager:
 			all_data[client][datatype] = list(self._database[coll].find(date_filter))
 			
 		return all_data
+	
+	@staticmethod
+	def _setup_date_filter(date_range: GDR) -> dict:
+		date_filter = {}
+		if date_range is not None:
+			if len(date_range) != 2:
+				raise ValueError('Expected 2 values in date_range')
+			start_date = DatabaseManager._parse_timestamp(date_range[0]) if date_range[0] is not None else None
+			end_date = DatabaseManager._parse_timestamp(date_range[1]) if date_range[1] is not None else None
+			
+			if start_date is None and end_date is None:
+				raise ValueError('Either the start date or the end date must not be None')
+			
+			date_filter['datetime'] = {}
+			if start_date:
+				date_filter['datetime']['$gte'] = start_date
+			if end_date:
+				date_filter['datetime']['$lte'] = end_date
+		return date_filter
 	
 	@staticmethod
 	def _parse_timestamp(t):
