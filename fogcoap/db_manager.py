@@ -298,6 +298,7 @@ class DatabaseManager:
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
 		:return: A dict with all the data.
 		"""
+		# TODO: Extra logging
 		# ======================= #
 		# Check client #
 		client_info = None
@@ -353,6 +354,7 @@ class DatabaseManager:
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
 		:return: A dict with all the data.
 		"""
+		# TODO: Extra logging
 		# ======================= #
 		# Check datatype #
 		datatype_info = None
@@ -392,6 +394,7 @@ class DatabaseManager:
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
 		:return: A dict with all the data.
 		"""
+		# TODO: Extra logging
 		date_filter = self._setup_date_filter(date_range)
 		all_data = {}
 		
@@ -418,6 +421,7 @@ class DatabaseManager:
 		Queries all the registered datatypes in the database.
 		:return: A list of datatypes on the database.
 		"""
+		# TODO: Extra logging
 		# TODO: Add some filters?
 		return list(self._type_metadata.find())
 	
@@ -426,6 +430,7 @@ class DatabaseManager:
 		Queries all the registered clients in the database.
 		:return: A list of clients on the database.
 		"""
+		# TODO: Extra logging
 		return list(self._client_registry.find())
 	
 	@staticmethod
