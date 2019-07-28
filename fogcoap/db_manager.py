@@ -227,7 +227,7 @@ class DatabaseManager:
 		
 		data_timestamp = data.get('t') or data.get('time')
 		if not data_timestamp:
-			raise InvalidData('Invalid data format: data value "v" or "value" not specified')
+			raise InvalidData('Invalid data format: data timestamp "t" or "time" not specified')
 		
 		try:
 			data_datetime = self._parse_timestamp(data_timestamp)
@@ -278,7 +278,7 @@ class DatabaseManager:
 				database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {-time_diff} seconds, '
 				                        f'either client is desynced or it was disconnected for a long time')
 			
-		return self._data[client_info['_id']][datatype_info['_id']].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
+		return self._data[str(client_info['_id'])][str(datatype_info['_id'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: GDR = None) -> dict:
@@ -290,7 +290,22 @@ class DatabaseManager:
 	def query_all(self, date_range: GDR = None) -> dict:
 		# TODO: Docstring
 		# TODO: Some comments explaining things, oh jesus
-		# TODO: Actually use the data_range
+		date_filter = {}
+		if date_range is not None:
+			if len(date_range) != 2:
+				raise ValueError('Expected 2 values in date_range')
+			start_date = self._parse_timestamp(date_range[0]) if date_range[0] is not None else None
+			end_date = self._parse_timestamp(date_range[1]) if date_range[1] is not None else None
+			
+			if start_date is None and end_date is None:
+				raise ValueError('Either the start date or the end date must not be None')
+			
+			date_filter['datetime'] = {}
+			if start_date:
+				date_filter['datetime']['$gte'] = start_date
+			if end_date:
+				date_filter['datetime']['$lte'] = end_date
+		
 		all_data = {}
 		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\.'}}):
 			_, client, datatype = coll.split('.')
@@ -300,7 +315,7 @@ class DatabaseManager:
 			if not all_data[client].get(datatype):
 				all_data[client][datatype] = {}
 			
-			all_data[client][datatype] = list(self._database[coll].find({}))
+			all_data[client][datatype] = list(self._database[coll].find(date_filter))
 			
 		return all_data
 	
