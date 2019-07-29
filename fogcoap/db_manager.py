@@ -433,6 +433,12 @@ class DatabaseManager:
 		# TODO: Extra logging
 		return list(self._client_registry.find())
 	
+	def close(self) -> None:
+		"""
+		Closes the connection to the database. If the database is ued again, it will be automatically re-opened.
+		"""
+		self._client.close()
+	
 	@staticmethod
 	def _setup_date_filter(date_range: GDR) -> dict:
 		date_filter = None
