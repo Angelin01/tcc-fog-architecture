@@ -9,7 +9,7 @@ class MyTestCase(unittest.TestCase):
 	
 	@classmethod
 	def tearDownClass(cls):
-		cls._db_manager.destroy()
+		cls._db_manager.close()
 
 
 if __name__ == '__main__':
