@@ -116,6 +116,20 @@ class MyTestCase(unittest.TestCase):
 		except (ValueError, TypeError) as e:
 			self.fail(f'_verify_bounds raised {type(e).__name__} on valid floats!')
 
+		# Wrong length
+		too_long = (400, 600, 800)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, too_long, valid_thresholds, int)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, too_long, int)
+
+		# Swapped values
+		swapped = (600, 400)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, swapped, valid_thresholds, int)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, swapped, int)
+		
+		# Thresholds outside bounds
+		wrong_thresholds = (0, 2000)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, wrong_thresholds, int)
+	
 
 if __name__ == '__main__':
 	unittest.main()
