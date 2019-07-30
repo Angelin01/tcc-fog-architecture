@@ -103,11 +103,18 @@ class MyTestCase(unittest.TestCase):
 		valid_bounds_missing_2nd = (100, None)
 		valid_thresholds_missing_2nd = (400, None)
 		try:
-			for bounds in [valid_bounds_missing_1st, valid_bounds_missing_2nd]:
-				for thresholds in [valid_thresholds_missing_1st, valid_thresholds_missing_2nd]:
+			for bounds in [valid_bounds_missing_1st, valid_bounds_missing_2nd, None]:
+				for thresholds in [valid_thresholds_missing_1st, valid_thresholds_missing_2nd, None]:
 					self._db_manager._verify_bounds(bounds, thresholds, int)
 		except (ValueError, TypeError) as e:
 			self.fail(f'_verify_bounds raised {type(e).__name__} on valid partials!')
+			
+		# Valid all None
+		tuple_none = (None, None)
+		try:
+			self._db_manager._verify_bounds(tuple_none, tuple_none, float)
+		except (ValueError, TypeError) as e:
+			self.fail(f'_verify_bounds raised {type(e).__name__} on valid floats!')
 
 
 if __name__ == '__main__':

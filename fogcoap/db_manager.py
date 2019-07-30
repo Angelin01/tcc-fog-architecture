@@ -486,31 +486,33 @@ class DatabaseManager:
 			raise TypeError('Bounds and Thresholds can only be ints or floats')
 		
 		# Check bounds object, types and values
-		if bounds is not None and len(bounds) != 2:
-			raise ValueError('Expected 2 values in bounds')
-		
-		if not (isinstance(bounds[0], expected_type) or bounds[0] is None) or \
-		   not (isinstance(bounds[1], expected_type) or bounds[1] is None):
-			raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.__name__}')
-		
-		# Swap bounds if they are inverted
-		# Better to fix the mistake than to raise an exception
-		if bounds[0] is not None and bounds[1] is not None and bounds[0] >= bounds[1]:
-			raise ValueError(f'Low bound {bounds[0]} cannot be higher than high bound {bounds[1]}')
+		if bounds is not None:
+			if len(bounds) != 2:
+				raise ValueError('Expected 2 values in bounds')
+			
+			if not (isinstance(bounds[0], expected_type) or bounds[0] is None) or \
+			   not (isinstance(bounds[1], expected_type) or bounds[1] is None):
+				raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.__name__}')
+			
+			# Swap bounds if they are inverted
+			# Better to fix the mistake than to raise an exception
+			if bounds[0] is not None and bounds[1] is not None and bounds[0] >= bounds[1]:
+				raise ValueError(f'Low bound {bounds[0]} cannot be higher than high bound {bounds[1]}')
 		
 		# Check thresholds object, types and values
-		if thresholds is not None and len(thresholds) != 2:
-			raise ValueError('Expected 2 values in thresholds')
-		
-		if not (isinstance(thresholds[0], expected_type) or thresholds[0] is None) or \
-		   not (isinstance(thresholds[1], expected_type) or thresholds[1] is None):
-			raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
-		
-		if thresholds[0] is not None and thresholds[1] is not None and thresholds[0] >= thresholds[1]:
-			raise ValueError(f'Low alert threshold {thresholds[0]} cannot be higher than high alert threshold {thresholds[1]}')
+		if thresholds is not None:
+			if len(thresholds) != 2:
+				raise ValueError('Expected 2 values in thresholds')
+			
+			if not (isinstance(thresholds[0], expected_type) or thresholds[0] is None) or \
+			   not (isinstance(thresholds[1], expected_type) or thresholds[1] is None):
+				raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
+			
+			if thresholds[0] is not None and thresholds[1] is not None and thresholds[0] >= thresholds[1]:
+				raise ValueError(f'Low alert threshold {thresholds[0]} cannot be higher than high alert threshold {thresholds[1]}')
 		
 		# Check if thresholds are valid
-		if bounds is not None:
+		if bounds is not None and thresholds is not None:
 			if bounds[0] is not None:
 				if thresholds[0] is not None and thresholds[0] < bounds[0] or \
 				   thresholds[1] is not None and thresholds[1] < bounds[0]:
