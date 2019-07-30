@@ -7,9 +7,18 @@ class MyTestCase(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls._db_manager = db_manager.DatabaseManager('unit_tests')
+		cls._db_manager._client_registry.delete_many({})
+		cls._db_manager._type_metadata.delete_many({})
+		for coll in cls._db_manager._database.list_collection_names(filter={'name': {'$regex': f'{cls._db_manager._Data}\.'}}):
+			cls._db_manager[coll].drop()
 	
 	@classmethod
 	def tearDownClass(cls):
+		cls._db_manager._client_registry.delete_many({})
+		cls._db_manager._type_metadata.delete_many({})
+		for coll in cls._db_manager._database.list_collection_names(filter={'name': {'$regex': f'{cls._db_manager._Data}\.'}}):
+			cls._db_manager[coll].drop()
+		
 		cls._db_manager.close()
 	
 	def test__parse_timestamp(self):

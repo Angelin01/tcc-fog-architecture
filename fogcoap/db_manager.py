@@ -289,7 +289,7 @@ class DatabaseManager:
 		return self._data[str(client_info['_id'])][str(datatype_info['_id'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
-	                      date_range: Tuple[Optional[str, int, datetime], Optional[str, int, datetime]] = None) -> dict:
+	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
 		"""
 		Queries the data for a specific client.
 		:param client: Either the `ObjectID` or the name of the registered client.
@@ -346,7 +346,7 @@ class DatabaseManager:
 		
 		return all_data
 
-	def query_data_type(self, datatype: Union[str, ObjectId], date_range: Tuple[Optional[str, int, datetime], Optional[str, int, datetime]] = None) -> dict:
+	def query_data_type(self, datatype: Union[str, ObjectId], date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
 		"""
 		Queries the data for a specific datatype.
 		:param datatype: Either a `ObjectID` or the name of the registered datatype as a filter.
@@ -387,7 +387,7 @@ class DatabaseManager:
 		
 		return all_data
 	
-	def query_all(self, date_range: Tuple[Optional[str, int, datetime], Optional[str, int, datetime]] = None) -> dict:
+	def query_all(self, date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
 		"""
 		Returns all actual data in the database, not including the metadata for clients and datatypes.
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
@@ -439,7 +439,7 @@ class DatabaseManager:
 		self._client.close()
 	
 	@staticmethod
-	def _setup_date_filter(date_range: Tuple[Optional[str, int, datetime], Optional[str, int, datetime]]) -> dict:
+	def _setup_date_filter(date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]]) -> dict:
 		date_filter = None
 		if date_range is not None:
 			date_filter = {}
@@ -476,7 +476,6 @@ class DatabaseManager:
 		except ValueError:
 			raise InvalidData('Timestamp format is invalid. Expected datetime object or ISO str or int timestamp')
 		raise InvalidData('Timestamp type is invalid, expected datetime object, str or int')
-		
 	
 	@staticmethod
 	def _verify_bounds(bounds, thresholds, expected_type):
