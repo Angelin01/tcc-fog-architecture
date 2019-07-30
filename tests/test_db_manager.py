@@ -1,12 +1,15 @@
 import unittest
 from fogcoap import db_manager
 from datetime import datetime
+from pymongo.errors import DuplicateKeyError
+from bson.objectid import ObjectId
 
 
 class MyTestCase(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls._db_manager = db_manager.DatabaseManager('unit_tests')
+		cls._db_manager.set_logging_level(999)  # Log nothing
 		cls._db_manager._client_registry.delete_many({})
 		cls._db_manager._type_metadata.delete_many({})
 		for coll in cls._db_manager._database.list_collection_names(filter={'name': {'$regex': f'{cls._db_manager._Data}\.'}}):
@@ -138,6 +141,20 @@ class MyTestCase(unittest.TestCase):
 		# Thresholds outside bounds
 		wrong_thresholds = (0, 2000)
 		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, wrong_thresholds, int)
+		
+	def test_register_client(self):
+		"""
+		Simple test when registering a client
+		Can't easily test warnings yet
+		"""
+		print('Testing register client')
+		
+		client = 'testerino'
+		# Valid first insert
+		self.assertIsInstance(self._db_manager.register_client(client), ObjectId)
+		
+		# Invalid duplicate
+		self.assertRaises(DuplicateKeyError, self._db_manager.register_client, client)
 	
 
 if __name__ == '__main__':
