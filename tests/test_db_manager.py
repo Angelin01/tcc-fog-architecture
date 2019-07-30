@@ -24,7 +24,7 @@ class MyTestCase(unittest.TestCase):
 		
 		cls._db_manager.close()
 	
-	def test__parse_timestamp(self):
+	def test_1_parse_timestamp(self):
 		"""
 		Test that _parse_timestamp returns a proper datetime and raises exceptions when it should
 		"""
@@ -49,7 +49,7 @@ class MyTestCase(unittest.TestCase):
 
 		self.assertRaises(OSError, self._db_manager._parse_timestamp, invalid_timestamp)
 		
-	def test__setup_date_filter(self):
+	def test_2_setup_date_filter(self):
 		"""
 		Test that _setup_date_filter properly checks everything and returns a valid filter
 		Doesn't check the timestamp itself as it is treated (and tested) by _parse_timestamp
@@ -85,7 +85,7 @@ class MyTestCase(unittest.TestCase):
 	
 		self.assertRaises(ValueError, self._db_manager._setup_date_filter, both_none)
 		
-	def test__verify_bounds(self):
+	def test_3_verify_bounds(self):
 		"""
 		Tests for _verify_bounds, extensive as there are many things to test
 		"""
@@ -142,12 +142,12 @@ class MyTestCase(unittest.TestCase):
 		wrong_thresholds = (0, 2000)
 		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, wrong_thresholds, int)
 		
-	def test_register_client(self):
+	def _register_client(self):
 		"""
 		Simple test when registering a client
 		Can't easily test warnings yet
 		"""
-		print('Testing register client')
+		print('Testing register_client')
 		
 		client = 'testerino'
 		# Valid first insert
@@ -156,6 +156,27 @@ class MyTestCase(unittest.TestCase):
 		# Invalid duplicate
 		self.assertRaises(DuplicateKeyError, self._db_manager.register_client, client)
 	
+	def _query_clients(self):
+		"""
+		Simple test for the query of clients
+		Expects the client from the _register_client test, run after that test
+		"""
+		print('Testing query_clients')
+		
+		# Insert one more client, expect 2
+		self._db_manager.register_client('testoncio')
+		query_result = self._db_manager.query_clients()
+		
+		# Expect 2 clients
+		self.assertEqual(len(query_result), 2)
+		# Expect all clients to be dicts
+		for client in query_result:
+			self.assertIsInstance(client, dict)
+			
+	def test_4_clients(self):
+		self._register_client()
+		self._query_clients()
+		
 
 if __name__ == '__main__':
 	unittest.main()
