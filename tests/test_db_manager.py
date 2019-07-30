@@ -72,6 +72,42 @@ class MyTestCase(unittest.TestCase):
 		self.assertRaises(ValueError, self._db_manager._setup_date_filter, wrong_length)
 	
 		self.assertRaises(ValueError, self._db_manager._setup_date_filter, both_none)
+		
+	def test__verify_bounds(self):
+		"""
+		Tests for _verify_bounds, extensive as there are many things to test
+		"""
+		print('Testing _verify_bounds')
+		
+		# Valid ints
+		valid_bounds = (100, 1000)
+		valid_thresholds = (400, 600)
+		valid_expected_int = int
+		try:
+			self._db_manager._verify_bounds(valid_bounds, valid_thresholds, valid_expected_int)
+		except (ValueError, TypeError) as e:
+			self.fail(f'_verify_bounds raised {type(e).__name__} on valid ints!')
+		
+		# Valid floats
+		valid_floats = (-50.0, 50.0)
+		valid_float_thresholds = (-10.0, 10.0)
+		valid_expected_float = float
+		try:
+			self._db_manager._verify_bounds(valid_floats, valid_float_thresholds, valid_expected_float)
+		except (ValueError, TypeError) as e:
+			self.fail(f'_verify_bounds raised {type(e).__name__} on valid floats!')
+			
+		# Valid half None
+		valid_bounds_missing_1st = (None, 1000)
+		valid_thresholds_missing_1st = (None, 600)
+		valid_bounds_missing_2nd = (100, None)
+		valid_thresholds_missing_2nd = (400, None)
+		try:
+			for bounds in [valid_bounds_missing_1st, valid_bounds_missing_2nd]:
+				for thresholds in [valid_thresholds_missing_1st, valid_thresholds_missing_2nd]:
+					self._db_manager._verify_bounds(bounds, thresholds, int)
+		except (ValueError, TypeError) as e:
+			self.fail(f'_verify_bounds raised {type(e).__name__} on valid partials!')
 
 
 if __name__ == '__main__':
