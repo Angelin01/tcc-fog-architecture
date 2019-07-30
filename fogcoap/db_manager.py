@@ -482,7 +482,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_bounds(bounds, thresholds, expected_type):
 		# Check that type isn't strings
-		if expected_type is not int or expected_type is not float:
+		if expected_type is not int and expected_type is not float:
 			raise TypeError('Bounds and Thresholds can only be ints or floats')
 		
 		# Check bounds object, types and values
