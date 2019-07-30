@@ -452,6 +452,11 @@ class DatabaseManager:
 			if start_date is None and end_date is None:
 				raise ValueError('Either the start date or the end date must not be None')
 			
+			# Swap dates if they are inverted
+			# Better to fix the mistake than to raise an exception when possible
+			if (start_date is not None and end_date is not None) and start_date > end_date:
+				start_date, end_date = end_date, start_date
+			
 			date_filter['datetime'] = {}
 			if start_date:
 				date_filter['datetime']['$gte'] = start_date
@@ -488,6 +493,8 @@ class DatabaseManager:
 		   not (isinstance(bounds[1], expected_type) or bounds[1] is None):
 			raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.__name__}')
 		
+		# Swap bounds if they are inverted
+		# Better to fix the mistake than to raise an exception
 		if bounds[0] is not None and bounds[1] is not None and bounds[0] >= bounds[1]:
 			raise ValueError(f'Low bound {bounds[0]} cannot be higher than high bound {bounds[1]}')
 		
