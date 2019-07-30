@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Union, Tuple, NewType
 
 
-GDR = NewType('GenDatetimeRange', Union[Tuple[str, str], Tuple[int, int], Tuple[datetime, datetime]])
+GDR = NewType('GenDatetimeRange', Tuple[Union[str, int, datetime], Union[str, int, datetime]])
 database_logger = logging.Logger(__name__)
 
 
