@@ -149,12 +149,16 @@ class DatabaseManager:
 		if storage_type not in StorageType:
 			raise TypeError(f'Invalid storage_type when registering type {name}')
 		
+		if storage_type is not StorageType.ARRAY and array_type is not None:
+			database_logger.warning('Parameter array_type will be ignored if storage_type is not ARRAY')
+			array_type = None
+		
 		if storage_type is StorageType.ARRAY:
 			if array_type is None:
 				raise TypeError('If storage_type is ARRAY, array_type must be set')
 			
 			if array_type not in StorageType or array_type is StorageType.ARRAY:  # Same as above, check for enum won't be needed in 3.8
-				raise TypeError('Invalid array storage type, must be INT, FLOAT or STR')
+				raise TypeError('Invalid array storage type, must be NUMBER or STR')
 
 		# Verify bounds and alerts, except for strs
 		if storage_type is not StorageType.STR and (storage_type is StorageType.ARRAY and array_type is not StorageType.STR):

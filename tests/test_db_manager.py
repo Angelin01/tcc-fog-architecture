@@ -234,6 +234,51 @@ class MyTestCase(unittest.TestCase):
 			alert_thresholds=None
 		), ObjectId)
 		
+		# Invalid inserts
+		# Will not test bounds and thresholds as those are tested in test_3_verify_bounds
+		# Missing storage_type
+		self.assertRaises(TypeError, self._db_manager.register_datatype,
+		                  name='invalid',
+		                  storage_type=None,
+		                  array_type=None,
+		                  unit='M',
+		                  valid_bounds=None,
+		                  alert_thresholds=None)
+		# storage_type not in enum
+		self.assertRaises(TypeError, self._db_manager.register_datatype,
+		                  name='invalid',
+		                  storage_type=50,
+		                  array_type=None,
+		                  unit='M',
+		                  valid_bounds=None,
+		                  alert_thresholds=None)
+		
+		# storage_type is array and no array_type
+		self.assertRaises(TypeError, self._db_manager.register_datatype,
+		                  name='invalid',
+		                  storage_type=db_manager.StorageType.ARRAY,
+		                  array_type=None,
+		                  unit='M',
+		                  valid_bounds=None,
+		                  alert_thresholds=None)
+		# storage_type is array and array_type is array
+		self.assertRaises(TypeError, self._db_manager.register_datatype,
+		                  name='invalid',
+		                  storage_type=db_manager.StorageType.ARRAY,
+		                  array_type=db_manager.StorageType.ARRAY,
+		                  unit='M',
+		                  valid_bounds=None,
+		                  alert_thresholds=None)
+		
+		# duplicate
+		self.assertRaises(DuplicateKeyError, self._db_manager.register_datatype,
+		                  name='temperature',
+		                  storage_type=db_manager.StorageType.NUMBER,
+		                  array_type=None,
+		                  unit='M',
+		                  valid_bounds=None,
+		                  alert_thresholds=None)
+		
 	def test_5_data(self):
 		self._register_data()
 		
