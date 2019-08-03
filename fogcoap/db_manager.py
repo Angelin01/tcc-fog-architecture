@@ -161,7 +161,7 @@ class DatabaseManager:
 				raise TypeError('Invalid array storage type, must be NUMBER or STR')
 
 		# Verify bounds and alerts, except for strs
-		if storage_type is not StorageType.STR and (storage_type is StorageType.ARRAY and array_type is not StorageType.STR):
+		if not (storage_type is StorageType.STR or (storage_type is StorageType.ARRAY and array_type is StorageType.STR)):
 			try:
 				self._verify_bounds(valid_bounds, alert_thresholds, array_type if storage_type is StorageType.ARRAY else storage_type)
 			except (ValueError, TypeError) as e:
@@ -262,8 +262,9 @@ class DatabaseManager:
 				raise InvalidData('Value type is different from the registered data type')
 			
 			if value_type is not StorageType.ARRAY:
-				if value_type is not StorageType.STR:
-					if data_value < datatype_info['valid_bounds'][0] or data_value > datatype_info['valid_bounds'][1]:
+				if value_type is not StorageType.STR and datatype_info['valid_bounds'] is not None:
+					if (datatype_info['valid_bounds'][0] is not None and data_value < datatype_info['valid_bounds'][0]) or \
+					   (datatype_info['valid_bounds'][1] is not None and data_value > datatype_info['valid_bounds'][1]):
 						raise InvalidData('Value is outside the valid bounds')
 					###########################
 					# TODO: Implement Alerts

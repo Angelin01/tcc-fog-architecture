@@ -13,14 +13,14 @@ class MyTestCase(unittest.TestCase):
 		cls._db_manager._client_registry.delete_many({})
 		cls._db_manager._type_metadata.delete_many({})
 		for coll in cls._db_manager._database.list_collection_names(filter={'name': {'$regex': f'{cls._db_manager._Data}\.'}}):
-			cls._db_manager[coll].drop()
+			cls._db_manager._database[coll].drop()
 	
 	@classmethod
 	def tearDownClass(cls):
 		cls._db_manager._client_registry.delete_many({})
 		cls._db_manager._type_metadata.delete_many({})
 		for coll in cls._db_manager._database.list_collection_names(filter={'name': {'$regex': f'{cls._db_manager._Data}\.'}}):
-			cls._db_manager[coll].drop()
+			cls._db_manager._database[coll].drop()
 		
 		cls._db_manager.close()
 	
@@ -279,8 +279,19 @@ class MyTestCase(unittest.TestCase):
 		                  valid_bounds=None,
 		                  alert_thresholds=None)
 		
+	def _insert_data(self):
+		print('Testing insert_data')
+		valid_data = {
+			'n': 'temperature',
+			't': '2019-08-03 18:12:00',
+			'v': 11.3
+		}
+		client = 'testerino'
+		self.assertIsInstance(self._db_manager.insert_data(client, valid_data), ObjectId)
+		
 	def test_5_data(self):
 		self._register_data()
+		self._insert_data()
 		
 
 if __name__ == '__main__':
