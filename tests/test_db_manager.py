@@ -94,7 +94,7 @@ class MyTestCase(unittest.TestCase):
 		# Valid ints
 		valid_bounds = (100, 1000)
 		valid_thresholds = (400, 600)
-		valid_expected_int = int
+		valid_expected_int = db_manager.StorageType.NUMBER
 		try:
 			self._db_manager._verify_bounds(valid_bounds, valid_thresholds, valid_expected_int)
 		except (ValueError, TypeError) as e:
@@ -103,7 +103,7 @@ class MyTestCase(unittest.TestCase):
 		# Valid floats
 		valid_floats = (-50.0, 50.0)
 		valid_float_thresholds = (-10.0, 10.0)
-		valid_expected_float = float
+		valid_expected_float = db_manager.StorageType.NUMBER
 		try:
 			self._db_manager._verify_bounds(valid_floats, valid_float_thresholds, valid_expected_float)
 		except (ValueError, TypeError) as e:
@@ -117,30 +117,30 @@ class MyTestCase(unittest.TestCase):
 		try:
 			for bounds in [valid_bounds_missing_1st, valid_bounds_missing_2nd, None]:
 				for thresholds in [valid_thresholds_missing_1st, valid_thresholds_missing_2nd, None]:
-					self._db_manager._verify_bounds(bounds, thresholds, int)
+					self._db_manager._verify_bounds(bounds, thresholds, db_manager.StorageType.NUMBER)
 		except (ValueError, TypeError) as e:
 			self.fail(f'_verify_bounds raised {type(e).__name__} on valid partials!')
 			
 		# Valid all None
 		tuple_none = (None, None)
 		try:
-			self._db_manager._verify_bounds(tuple_none, tuple_none, float)
+			self._db_manager._verify_bounds(tuple_none, tuple_none, db_manager.StorageType.NUMBER)
 		except (ValueError, TypeError) as e:
 			self.fail(f'_verify_bounds raised {type(e).__name__} on valid floats!')
 
 		# Wrong length
 		too_long = (400, 600, 800)
-		self.assertRaises(ValueError, self._db_manager._verify_bounds, too_long, valid_thresholds, int)
-		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, too_long, int)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, too_long, valid_thresholds, db_manager.StorageType.NUMBER)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, too_long, db_manager.StorageType.NUMBER)
 
 		# Swapped values
 		swapped = (600, 400)
-		self.assertRaises(ValueError, self._db_manager._verify_bounds, swapped, valid_thresholds, int)
-		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, swapped, int)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, swapped, valid_thresholds, db_manager.StorageType.NUMBER)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, swapped, db_manager.StorageType.NUMBER)
 		
 		# Thresholds outside bounds
 		wrong_thresholds = (0, 2000)
-		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, wrong_thresholds, int)
+		self.assertRaises(ValueError, self._db_manager._verify_bounds, valid_bounds, wrong_thresholds, db_manager.StorageType.NUMBER)
 		
 	def _register_client(self):
 		"""
@@ -176,6 +176,18 @@ class MyTestCase(unittest.TestCase):
 	def test_4_clients(self):
 		self._register_client()
 		self._query_clients()
+		
+	def _register_data(self):
+		valid_data_simple = {
+			'name': 'temperatura',
+			'storage_type': db_manager.StorageType.FLOAT,
+			'unit': 'C',
+			'valid_bounds': (-273.15, None),
+			'alert_thresholds': (0.0, )
+		}
+		
+	def test_5_data(self):
+		pass
 		
 
 if __name__ == '__main__':

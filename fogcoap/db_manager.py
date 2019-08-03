@@ -12,21 +12,24 @@ database_logger = logging.Logger(__name__)
 
 
 class StorageType(Enum):
-	INT = 0
-	FLOAT = 1
-	STR = 2
-	ARRAY = 3
+	NUMBER = 0
+	STR = 1
+	ARRAY = 2
 	
-
-storage_type_dict = {
-	StorageType.INT: int,
-	StorageType.FLOAT: float,
-	StorageType.STR: str,
-	StorageType.ARRAY: list
-}
-type_storage_dict = {
-	int: StorageType.INT,
-	float: StorageType.FLOAT,
+	_ignore_ = ['_type_storage_dict']
+	_type_storage_dict = {}
+	
+	@staticmethod
+	def type_enum(n):
+		return StorageType._type_storage_dict[n]
+	
+	@staticmethod
+	def is_instance(value, value_type):
+		return StorageType._type_storage_dict.get(type(value)) == value_type
+	
+StorageType._type_storage_dict = {
+	int: StorageType.NUMBER,
+	float: StorageType.NUMBER,
 	str: StorageType.STR,
 	list: StorageType.ARRAY
 }
@@ -156,7 +159,7 @@ class DatabaseManager:
 		# Verify bounds and alerts, except for strs
 		if storage_type is not StorageType.STR:
 			try:
-				self._verify_bounds(valid_bounds, alert_thresholds, storage_type_dict[array_type if storage_type is StorageType.ARRAY else storage_type])
+				self._verify_bounds(valid_bounds, alert_thresholds, array_type if storage_type is StorageType.ARRAY else storage_type)
 			except (ValueError, TypeError) as e:
 				raise Exception(f'Invalid bounds or thresholds when registering type {name}') from e
 		else:
@@ -250,7 +253,7 @@ class DatabaseManager:
 			raise InvalidData('Data name does not correspond to any registered data type')
 		
 		try:
-			value_type = type_storage_dict[type(data_value)]
+			value_type = StorageType.type_enum(type(data_value))
 			if value_type.value != datatype_info['storage_type']:
 				raise InvalidData('Value type is different from the registered data type')
 			
@@ -264,7 +267,7 @@ class DatabaseManager:
 				
 			else:
 				for v in data_value:
-					v_type = type_storage_dict[type(v)]
+					v_type = StorageType.type_enum(type(v))
 					if v_type.value != datatype_info['array_type']:
 						raise InvalidData('Value type in list is different from the registered array type')
 					if v_type is not StorageType.STR:
@@ -480,17 +483,17 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_bounds(bounds, thresholds, expected_type):
 		# Check that type isn't strings
-		if expected_type is not int and expected_type is not float:
-			raise TypeError('Bounds and Thresholds can only be ints or floats')
+		if expected_type is not StorageType.NUMBER:
+			raise TypeError('Bounds and Thresholds can only be numbers')
 		
 		# Check bounds object, types and values
 		if bounds is not None:
 			if len(bounds) != 2:
 				raise ValueError('Expected 2 values in bounds')
 			
-			if not (isinstance(bounds[0], expected_type) or bounds[0] is None) or \
-			   not (isinstance(bounds[1], expected_type) or bounds[1] is None):
-				raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.__name__}')
+			if not (StorageType.is_instance(bounds[0], expected_type) or bounds[0] is None) or \
+			   not (StorageType.is_instance(bounds[1], expected_type) or bounds[1] is None):
+				raise TypeError(f'Types for bounds don\'t match with expected type {expected_type.name}')
 			
 			# Swap bounds if they are inverted
 			# Better to fix the mistake than to raise an exception
@@ -502,8 +505,8 @@ class DatabaseManager:
 			if len(thresholds) != 2:
 				raise ValueError('Expected 2 values in thresholds')
 			
-			if not (isinstance(thresholds[0], expected_type) or thresholds[0] is None) or \
-			   not (isinstance(thresholds[1], expected_type) or thresholds[1] is None):
+			if not (StorageType.is_instance(thresholds[0], expected_type) or thresholds[0] is None) or \
+			   not (StorageType.is_instance(thresholds[1], expected_type) or thresholds[1] is None):
 				raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
 			
 			if thresholds[0] is not None and thresholds[1] is not None and thresholds[0] >= thresholds[1]:
