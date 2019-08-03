@@ -178,6 +178,10 @@ class MyTestCase(unittest.TestCase):
 		self._query_clients()
 		
 	def _register_data(self):
+		"""
+		Tests data registering
+		Needs a LOT of tests as there are many possible errors
+		"""
 		print('Testing register_datatype')
 		# Valid simple
 		self.assertIsInstance(self._db_manager.register_datatype(
@@ -280,7 +284,13 @@ class MyTestCase(unittest.TestCase):
 		                  alert_thresholds=None)
 		
 	def _insert_data(self):
+		"""
+		Test data insertion
+		Never trust the client
+		"""
 		print('Testing insert_data')
+		
+		# Valids
 		valid_data = {
 			'n': 'temperature',
 			't': '2019-08-03 18:12:00',
@@ -289,7 +299,49 @@ class MyTestCase(unittest.TestCase):
 		client = 'testerino'
 		self.assertIsInstance(self._db_manager.insert_data(client, valid_data), ObjectId)
 		
+		valid_string_data = {
+			'n': 'nothing',
+			't': '2019-08-03 18:12:00',
+			'v': 'STRINGY'
+		}
+		self.assertIsInstance(self._db_manager.insert_data(client, valid_string_data), ObjectId)
+		
+		valid_array_data = {
+			'n': 'isarray',
+			't': '2019-08-03 18:12:00',
+			'v': [1, 2, 3]
+		}
+		self.assertIsInstance(self._db_manager.insert_data(client, valid_array_data), ObjectId)
+		
+		# Invalids
+		wrong_type = {
+			'n': 'temperature',
+			't': '2019-08-03 18:12:00',
+			'v': [1, 2, 3]
+		}
+		self.assertRaises(db_manager.InvalidData, self._db_manager.insert_data, client, wrong_type)
+		
+		# Invalid client
+		invalid_client = 'notregistered'
+		self.assertRaises(db_manager.InvalidClient, self._db_manager.insert_data, invalid_client, valid_data)
+		
+		# Invalid time
+		invalid_time = {
+			'n': 'temperature',
+			't': 'lololol',
+			'v': 11.3
+		}
+		self.assertRaises(db_manager.InvalidData, self._db_manager.insert_data, client, invalid_time)
+		
+		# Missing info
+		missing_info = {
+			'n': 'temperature',
+			't': '2019-08-03 18:12:00',
+		}
+		self.assertRaises(db_manager.InvalidData, self._db_manager.insert_data, client, missing_info)
+		
 	def test_5_data(self):
+		# TODO: Test queries for data
 		self._register_data()
 		self._insert_data()
 		
