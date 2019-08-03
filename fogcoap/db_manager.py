@@ -157,7 +157,7 @@ class DatabaseManager:
 				raise TypeError('Invalid array storage type, must be INT, FLOAT or STR')
 
 		# Verify bounds and alerts, except for strs
-		if storage_type is not StorageType.STR:
+		if storage_type is not StorageType.STR and (storage_type is StorageType.ARRAY and array_type is not StorageType.STR):
 			try:
 				self._verify_bounds(valid_bounds, alert_thresholds, array_type if storage_type is StorageType.ARRAY else storage_type)
 			except (ValueError, TypeError) as e:
@@ -185,7 +185,7 @@ class DatabaseManager:
 			obj_id = self._type_metadata.insert_one({
 				'name': name,
 				'storage_type': storage_type.value,
-				'array_type': array_type,
+				'array_type': None if array_type is None else array_type.value,
 				'unit': unit,
 				'valid_bounds': valid_bounds,
 				'alert_thresholds': alert_thresholds

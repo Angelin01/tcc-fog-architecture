@@ -178,16 +178,64 @@ class MyTestCase(unittest.TestCase):
 		self._query_clients()
 		
 	def _register_data(self):
-		valid_data_simple = {
-			'name': 'temperatura',
-			'storage_type': db_manager.StorageType.FLOAT,
-			'unit': 'C',
-			'valid_bounds': (-273.15, None),
-			'alert_thresholds': (0.0, )
-		}
+		print('Testing register_datatype')
+		# Valid simple
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='temperature',
+			storage_type=db_manager.StorageType.NUMBER,
+			unit='°C',
+			valid_bounds=(-273.15, None),
+			alert_thresholds=(0, 50)
+		), ObjectId)
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='othername',
+			storage_type=db_manager.StorageType.NUMBER,
+			unit='G',
+			valid_bounds=None,
+			alert_thresholds=(0, 50)
+		), ObjectId)
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='cake',
+			storage_type=db_manager.StorageType.NUMBER,
+			unit=None,
+			valid_bounds=(-273.15, 500),
+			alert_thresholds=None
+		), ObjectId)
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='nothing',
+			storage_type=db_manager.StorageType.STR,
+			unit=None,
+			valid_bounds=None,
+			alert_thresholds=None
+		), ObjectId)
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='hasalerts',
+			storage_type=db_manager.StorageType.NUMBER,
+			unit=None,
+			valid_bounds=None,
+			alert_thresholds=(0.05, 500)
+		), ObjectId)
+		
+		# Valid arrays
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='isarray',
+			storage_type=db_manager.StorageType.ARRAY,
+			array_type=db_manager.StorageType.NUMBER,
+			unit='L',
+			valid_bounds=(0.5, 900),
+			alert_thresholds=(0.5, 500)
+		), ObjectId)
+		self.assertIsInstance(self._db_manager.register_datatype(
+			name='isarraystr',
+			storage_type=db_manager.StorageType.ARRAY,
+			array_type=db_manager.StorageType.STR,
+			unit='M',
+			valid_bounds=None,
+			alert_thresholds=None
+		), ObjectId)
 		
 	def test_5_data(self):
-		pass
+		self._register_data()
 		
 
 if __name__ == '__main__':
