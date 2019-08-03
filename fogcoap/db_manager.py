@@ -294,7 +294,7 @@ class DatabaseManager:
 				database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {-time_diff} seconds, '
 				                        f'either client is desynced or it was disconnected for a long time')
 			
-		return self._data[str(client_info['_id'])][str(datatype_info['_id'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
+		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
