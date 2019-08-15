@@ -1,3 +1,2 @@
-aiocoap
-LinkHeader
+aiocoap[linkheader,oscore] >= 0.4a1
 pymongo
