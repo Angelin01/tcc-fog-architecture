@@ -88,7 +88,7 @@ class Broker:
 		                        WKCResource(self._root.get_resources_as_linkheader))
 		self._setup_resources()
 		
-		asyncio.Task(Context.create_server_context(self._root))
+		asyncio.Task(Context.create_server_context(self._root, bind=('::', port)))
 		
 		asyncio.get_event_loop().run_forever()
 	
