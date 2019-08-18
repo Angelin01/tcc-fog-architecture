@@ -1,11 +1,11 @@
+import asyncio
 import json
-import aiocoap.resource as resource
-from aiocoap.numbers.codes import Code
-from aiocoap.message import Message
+from aiocoap import Code, Message, Context
+from aiocoap.resource import Site, WKCResource, Resource
 from .db_manager import DatabaseManager, InvalidData
 
 
-class ClientResource(resource.Resource):
+class ClientResource(Resource):
 	def __init__(self, name: str, db_manager: DatabaseManager):
 		self._name = name
 		self._db_manager = db_manager
@@ -83,11 +83,15 @@ class Broker:
 	def __init__(self, db_manager: DatabaseManager, port: int = 5683):
 		self._db_manager = db_manager
 		self._port = port
-		self._root = resource.Site()
+		self._root = Site()
 		self._root.add_resource(('.well-known', 'core'),
-		                        resource.WKCResource(self._root.get_resources_as_linkheader))
+		                        WKCResource(self._root.get_resources_as_linkheader))
 		self._setup_resources()
 		
+		asyncio.Task(Context.create_server_context(self._root))
+		
+		asyncio.get_event_loop().run_forever()
+	
 	def _setup_resources(self):
 		self._setup_clients()
 		self._setup_datatypes()

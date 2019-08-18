@@ -1,20 +1,9 @@
-import asyncio
-import aiocoap as coap
-import aiocoap.resource as resource
-from fogcoap.gen_resource import GenericResource
+import fogcoap
 
 
 def main():
-	# Resource tree creation
-	root = resource.Site()
-
-	root.add_resource(('.well-known', 'core'),
-                       resource.WKCResource(root.get_resources_as_linkheader))
-	root.add_resource(('generic', 'resource'), GenericResource())
-
-	asyncio.Task(coap.Context.create_server_context(root))
-
-	asyncio.get_event_loop().run_forever()
+	db = fogcoap.DatabaseManager('fogcoap')
+	broker = fogcoap.Broker(db)
 
 
 if __name__ == '__main__':
