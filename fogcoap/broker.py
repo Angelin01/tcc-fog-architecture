@@ -89,7 +89,15 @@ class Broker:
 		self._setup_resources()
 		
 	def _setup_resources(self):
-		clients = self._db_manager.query_clients()
+		self._setup_clients()
+		self._setup_datatypes()
+		
+	def _setup_clients(self):
+		for client in self._db_manager.query_clients():
+			self._root.add_resource(('client', client['name']),
+			                        ClientResource(client['name'], self._db_manager))
+		
+	def _setup_datatypes(self):
 		pass
 	
 	def run(self):
