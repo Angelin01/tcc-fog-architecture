@@ -19,6 +19,19 @@ class ClientResource(resource.Resource):
 		pass
 	
 	def render_post(self, request: Message):
+		"""
+		Post method for the client, for inserting data values.
+		Expects a payload with a json object containing 3 values:
+		`n` or `name`: the name specified when registering a datatype.
+		`v` or `value`: the actual value for the data.
+		`t` or `time`: timestamp for when the data was collected, as an int timestamp or str iso formatted string
+		
+		The following is a valid json example, considering a datatype named "temperature" that expects a number:
+		`{"n": "temperature", "v": 21.5, "t": "2019-01-01 10:0:0"}`
+		
+		Returns a json payload with the key id containing the str representation of the inserted id on success with a code CHANGED.
+		On any errors, returns a json payload with the key error set to a message explaining the error.
+		"""
 		try:
 			obj_id = self._db_manager.insert_data(self._name, json.loads(request.payload))
 		except json.decoder.JSONDecodeError:
