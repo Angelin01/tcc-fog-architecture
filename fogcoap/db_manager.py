@@ -234,15 +234,15 @@ class DatabaseManager:
 		# Get values from dict #
 		data_name = data.get('n') or data.get('name')
 		if not data_name:
-			raise InvalidData('Invalid data format: data name "n" or "name" not specified')
+			raise InvalidData('Data name "n" or "name" not specified')
 		
 		data_value = data.get('v') or data.get('value')
 		if not data_value:
-			raise InvalidData('Invalid data format: data value "v" or "value" not specified')
+			raise InvalidData('Data value "v" or "value" not specified')
 		
 		data_timestamp = data.get('t') or data.get('time')
 		if not data_timestamp:
-			raise InvalidData('Invalid data format: data timestamp "t" or "time" not specified')
+			raise InvalidData('Data timestamp "t" or "time" not specified')
 		
 		try:
 			data_datetime = self._parse_timestamp(data_timestamp)
@@ -283,7 +283,7 @@ class DatabaseManager:
 					###########################
 					
 		except KeyError:
-			raise InvalidData('Value type is not a valid type, expected int, float, str or list')
+			raise InvalidData('Value type is not a valid type, expected number, str or list')
 		
 		if self.warnings:
 			time_diff = (data_datetime - datetime.utcnow()).seconds
