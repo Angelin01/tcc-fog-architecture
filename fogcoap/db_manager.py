@@ -323,9 +323,9 @@ class DatabaseManager:
 		if datatype:
 			datatype_info = None
 			if isinstance(datatype, str):
-				datatype_info = self._client_registry.find_one({'name': datatype})
+				datatype_info = self._type_metadata.find_one({'name': datatype})
 			elif isinstance(datatype, ObjectId):
-				datatype_info = self._client_registry.find_one({'_id': datatype})
+				datatype_info = self._type_metadata.find_one({'_id': datatype})
 			
 			if not datatype_info:
 				raise InvalidData('Specified datatype has not been registered')
@@ -358,9 +358,9 @@ class DatabaseManager:
 		# Check datatype #
 		datatype_info = None
 		if isinstance(datatype, str):
-			datatype_info = self._client_registry.find_one({'name': datatype})
+			datatype_info = self._type_metadata.find_one({'name': datatype})
 		elif isinstance(datatype, ObjectId):
-			datatype_info = self._client_registry.find_one({'_id': datatype})
+			datatype_info = self._type_metadata.find_one({'_id': datatype})
 		
 		if not datatype_info:
 			raise InvalidData('Specified datatype has not been registered')
