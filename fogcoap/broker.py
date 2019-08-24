@@ -27,7 +27,7 @@ class ClientResource(Resource):
 			no_data = parameters.get('nd') or parameters.get('nodata')
 			
 			if not no_data:
-				datatype = parameters.get('n') or parameters.get('name')
+				datatype = parameters.get('d') or parameters.get('datatype')
 				timerange = parameters.get('t') or parameters.get('time')
 				try:
 					clients_data = self._db_manager.query_data_client(self._name, datatype, timerange)
