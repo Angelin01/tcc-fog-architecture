@@ -316,7 +316,7 @@ class DatabaseManager:
 		
 		if not client_info:
 			raise InvalidClient('Specified client has not been registered')
-		client_filter = str(client_info['_id'])
+		client_filter = client_info['name']
 			
 		# ======================= #
 		# Check datatype #
