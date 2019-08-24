@@ -7,7 +7,7 @@ from sys import argv, exit
 
 async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: dict = None):
 	# compressed_payload = compress(json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii'), 9) if payload else ''
-	compressed_payload = json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii') or b''
+	compressed_payload = json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii') if payload else b''
 	protocol = await coap.Context.create_client_context()
 
 	uri = f'coap://{host}/{resource}'
