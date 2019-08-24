@@ -63,6 +63,12 @@ class ClientResource(Resource):
 		
 		else:
 			clients_data = self._db_manager.query_data_client(self._name)
+			
+		if clients_data is not None:
+			for datatype in clients_data.values():
+				for item in datatype:
+					item['_id'] = str(item['_id'])
+					item['datetime'] = int(item['datetime'].timestamp())
 		
 		return self._build_msg(data={
 			'c': self._name,

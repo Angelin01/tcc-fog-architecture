@@ -344,10 +344,6 @@ class DatabaseManager:
 			# Convert the returns to a list and add it to the dict
 			all_data[datatype] = list(self._database[coll].find(date_filter))
 		
-		for datatype in all_data.values():
-			for item in datatype:
-				item['_id'] = str(item['_id'])
-		
 		return all_data
 
 	def query_data_type(self, datatype: Union[str, ObjectId], date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
