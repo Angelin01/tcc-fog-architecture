@@ -44,6 +44,8 @@ class ClientResource(Resource):
 		if len(request.payload) > 0:
 			try:
 				parameters = json.loads(request.payload)
+				if not isinstance(parameters, dict):
+					raise json.JSONDecodeError
 			except (json.JSONDecodeError, UnicodeDecodeError):
 				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			
