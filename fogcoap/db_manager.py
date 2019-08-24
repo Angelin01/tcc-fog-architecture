@@ -329,7 +329,7 @@ class DatabaseManager:
 			
 			if not datatype_info:
 				raise InvalidData('Specified datatype has not been registered')
-			datatype_filter = str(datatype_info['_id'])
+			datatype_filter = str(datatype_info['name'])
 		else:
 			datatype_filter = '.*'
 		# ======================= #
@@ -364,7 +364,7 @@ class DatabaseManager:
 		
 		if not datatype_info:
 			raise InvalidData('Specified datatype has not been registered')
-		datatype_filter = str(datatype_info['_id'])
+		datatype_filter = str(datatype_info['name'])
 		# ======================= #
 		date_filter = self._setup_date_filter(date_range)
 		
