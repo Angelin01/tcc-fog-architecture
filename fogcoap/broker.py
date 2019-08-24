@@ -1,5 +1,7 @@
 import asyncio
 import json
+from gzip import compress as gzcompress
+from gzip import decompress as gzdecompress
 from datetime import datetime
 from aiocoap import Code, Message, Context
 from aiocoap.resource import Site, WKCResource, Resource
@@ -15,13 +17,17 @@ class ClientResource(Resource):
 		
 	@staticmethod
 	def _build_msg(code: Code = None, data=None) -> Message:
-		return Message(code=code, payload=json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii') if data is not None else b'')
+		if data is not None:
+			payload = gzcompress(json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii'))
+		else:
+			payload = b''
+		return Message(code=code, payload=payload)
 
 	def render_get(self, request: Message):
 		"""
 		Get method for the client, getting data the client has sent.
 		If sent with an empty payload, will simply return all data.
-		If a payload is present, expects a json payload (preferably minified) with 3 optional keys:
+		If a payload is present, expects a gzip compressed json payload (preferably minified) with 3 optional keys:
 		`nd` or `nodata`: a true or false value. If true, the request will not return any of the clients data.
 		`d` or `datatype: name of a specific registered datatype. If set, will only return data from that datatype.
 		`t` or `time`: an array with two values for a range of values between dates. Additionally, if the first value is null,
@@ -35,20 +41,28 @@ class ClientResource(Resource):
 			"t": [null, 1566687475]
 		}
 		
-		Returns an object containing 3 keys:
+		Returns a gzip compressed json object containing 3 keys:
 		`c`: the clients name.
 		`l`: the UTC timestamp when the broker last received a message from the client,
 		     will be 0 if the broker hasn't received a message since startup.
 		`d`: the clients data, filtered according to parameters. `null` if `nd` was received with anything not interpreted as false.
 		"""
 		if len(request.payload) > 0:
+			# Decompress payload
 			try:
-				parameters = json.loads(request.payload)
+				payload = gzdecompress(request.payload)
+			except OSError:
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad GZIP compression'})
+			
+			# Load the json
+			try:
+				parameters = json.loads(payload)
 				if not isinstance(parameters, dict):
 					return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			except (json.JSONDecodeError, UnicodeDecodeError):
 				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			
+			# Verify parameters
 			no_data = parameters.get('nd') or parameters.get('nodata')
 			
 			if not no_data:
@@ -63,7 +77,8 @@ class ClientResource(Resource):
 		
 		else:
 			clients_data = self._db_manager.query_data_client(self._name)
-			
+		
+		# Reformat data for response
 		if clients_data is not None:
 			for datatype in clients_data.values():
 				for item in datatype:
@@ -79,7 +94,7 @@ class ClientResource(Resource):
 	def render_post(self, request: Message):
 		"""
 		Post method for the client, for inserting data values.
-		Expects a payload with a json object list (preferably minified), with each object containing 3 values:
+		Expects a gzip compressed payload with a json object list (preferably minified), with each object containing 3 values:
 		`n` or `name`: the name specified when registering a `datatype`.
 		`v` or `value`: the actual value for the data.
 		`t` or `time`: timestamp for when the data was collected, as an int timestamp or str iso formatted string (preferred UTC time)
@@ -102,9 +117,17 @@ class ClientResource(Resource):
 		
 		If the entire json could not be loaded a BAD_REQUEST will be returned with a simple json object payload `{"error", "Bad JSON format"}`.
 		Similarly, if the loaded object is not a list, the error shall be `"JSON top object not an array"`.
+		The response payload will be gzip compressed.
 		"""
+		# Decompress payload
 		try:
-			data_list = json.loads(request.payload)
+			payload = gzdecompress(request.payload)
+		except OSError:
+			return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad GZIP compression'})
+		
+		# Load the json data
+		try:
+			data_list = json.loads(payload)
 		except (json.decoder.JSONDecodeError, UnicodeDecodeError):
 			return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 		
@@ -114,6 +137,7 @@ class ClientResource(Resource):
 		one_successful = False
 		insert_status = []
 		
+		# Insert values
 		for data in data_list:
 			if not isinstance(data, dict):
 				insert_status.append({'error': 'Bad JSON format'})
