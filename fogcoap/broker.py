@@ -1,5 +1,6 @@
 import asyncio
 import json
+from datetime import datetime
 from aiocoap import Code, Message, Context
 from aiocoap.resource import Site, WKCResource, Resource
 from fogcoap.db_manager import DatabaseManager, InvalidData
@@ -9,6 +10,7 @@ class ClientResource(Resource):
 	def __init__(self, name: str, db_manager: DatabaseManager):
 		self._name = name
 		self._db_manager = db_manager
+		self._last_rcv_timestamp = 0
 		super().__init__()
 		
 	@staticmethod
@@ -16,7 +18,32 @@ class ClientResource(Resource):
 		return Message(code=code, payload=json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii') if data is not None else b'')
 
 	def render_get(self, request: Message):
-		return Message(payload=f'Client {self._name} exists'.encode('ascii'))
+		if len(request.payload) > 0:
+			try:
+				parameters = json.loads(request.payload)
+			except json.JSONDecodeError:
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			
+			no_data = parameters.get('nd') or parameters.get('nodata')
+			
+			if not no_data:
+				datatype = parameters.get('n') or parameters.get('name')
+				timerange = parameters.get('t') or parameters.get('time')
+				try:
+					clients_data = self._db_manager.query_data_client(self._name, datatype, timerange)
+				except (InvalidData, ValueError) as e:
+					return self._build_msg(code=Code.BAD_REQUEST, data={'error': str(e)})
+			else:
+				clients_data = None
+		
+		else:
+			clients_data = self._db_manager.query_data_client(self._name)
+		
+		return self._build_msg(data={
+			'c': self._name,
+			'l': self._last_rcv_timestamp,
+			'd': clients_data
+		})
 	
 	def render_post(self, request: Message):
 		"""
@@ -74,6 +101,9 @@ class ClientResource(Resource):
 			else:
 				insert_status.append({'id': str(obj_id)})
 				one_successful = True
+				
+		if one_successful:
+			self._last_rcv_timestamp = int(datetime.utcnow().timestamp())
 		
 		return self._build_msg(code=Code.CHANGED if one_successful else Code.BAD_REQUEST,
 		                       data=insert_status)
