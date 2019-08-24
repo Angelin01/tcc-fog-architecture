@@ -344,7 +344,7 @@ class DatabaseManager:
 			# Convert the returns to a list and add it to the dict
 			all_data[datatype] = list(self._database[coll].find(date_filter))
 		
-		for datatype in all_data:
+		for datatype in all_data.values():
 			for item in datatype:
 				item['_id'] = str(item['_id'])
 		
