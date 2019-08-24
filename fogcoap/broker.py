@@ -18,6 +18,29 @@ class ClientResource(Resource):
 		return Message(code=code, payload=json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii') if data is not None else b'')
 
 	def render_get(self, request: Message):
+		"""
+		Get method for the client, getting data the client has sent.
+		If sent with an empty payload, will simply return all data.
+		If a payload is present, it is expected a json payload (preferably minified) with 3 optional keys:
+		`nd` or `nodata`: a true or false value. If true, the request will not return any of the clients data.
+		`d` or `datatype: name of a specific registered datatype. If set, will only return data from that datatype.
+		`t` or `time`: an array with two values for a range of values between dates. Addtionally, if the first value is null,
+		               all data since the beginning until the second value is returned. Similarly, if the second value is null,
+		               all data since the first value until now will be returned.
+		                
+		The following is a valid payload, assuming the datatype "temp" exists:
+		```
+		{
+			"d": "temp",
+			"t": [null, 1566687475]
+		}
+		
+		Returns an object containing 3 keys:
+		`c`: the clients name.
+		`l`: the UTC timestamp when the broker last received a message from the client,
+		     will be 0 if the broker hasn't received a message since startup.
+		`d`: the clients data, filtered according to parameters. `null` if `nd` was received with anything not interpreted as false.
+		"""
 		if len(request.payload) > 0:
 			try:
 				parameters = json.loads(request.payload)
