@@ -7,7 +7,7 @@ from sys import argv, exit
 
 async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: dict = None):
 	# compressed_payload = compress(json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii'), 9) if payload else ''
-	compressed_payload = json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii')
+	compressed_payload = json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii') or b''
 	protocol = await coap.Context.create_client_context()
 
 	uri = f'coap://{host}/{resource}'
@@ -58,8 +58,7 @@ if __name__ == '__main__':
 			print(f'Invalid method {argv[3]}, use GET POST PUT or DELETE')
 			exit(1)
 
-
-	PAYLOAD = ''
+	PAYLOAD = None
 	if len(argv) >= 5:
 		try:
 			PAYLOAD = json.loads(argv[4])
