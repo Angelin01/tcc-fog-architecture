@@ -44,7 +44,7 @@ class ClientResource(Resource):
 		if len(request.payload) > 0:
 			try:
 				parameters = json.loads(request.payload)
-			except json.JSONDecodeError:
+			except (json.JSONDecodeError, UnicodeDecodeError):
 				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			
 			no_data = parameters.get('nd') or parameters.get('nodata')
@@ -97,7 +97,7 @@ class ClientResource(Resource):
 		"""
 		try:
 			data_list = json.loads(request.payload)
-		except json.decoder.JSONDecodeError:
+		except (json.decoder.JSONDecodeError, UnicodeDecodeError):
 			return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 		
 		if not isinstance(data_list, list) or len(data_list) == 0:
