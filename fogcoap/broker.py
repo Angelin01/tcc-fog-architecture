@@ -56,7 +56,7 @@ class ClientResource(Resource):
 				timerange = parameters.get('t') or parameters.get('time')
 				try:
 					clients_data = self._db_manager.query_data_client(self._name, datatype, timerange)
-				except (InvalidData, ValueError) as e:
+				except (InvalidData, ValueError, TypeError) as e:
 					return self._build_msg(code=Code.BAD_REQUEST, data={'error': str(e)})
 			else:
 				clients_data = None

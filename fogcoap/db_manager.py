@@ -442,9 +442,12 @@ class DatabaseManager:
 	def _setup_date_filter(date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]]) -> dict:
 		date_filter = None
 		if date_range is not None:
+			if not isinstance(date_range, list):
+				raise TypeError('Date range is not a list')
+			
 			date_filter = {}
 			if len(date_range) != 2:
-				raise ValueError('Expected 2 values in date_range')
+				raise ValueError('Expected 2 values in date range')
 			start_date = DatabaseManager._parse_timestamp(date_range[0]) if date_range[0] is not None else None
 			end_date = DatabaseManager._parse_timestamp(date_range[1]) if date_range[1] is not None else None
 			
