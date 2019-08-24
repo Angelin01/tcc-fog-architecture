@@ -21,10 +21,10 @@ class ClientResource(Resource):
 		"""
 		Get method for the client, getting data the client has sent.
 		If sent with an empty payload, will simply return all data.
-		If a payload is present, it is expected a json payload (preferably minified) with 3 optional keys:
+		If a payload is present, expects a json payload (preferably minified) with 3 optional keys:
 		`nd` or `nodata`: a true or false value. If true, the request will not return any of the clients data.
 		`d` or `datatype: name of a specific registered datatype. If set, will only return data from that datatype.
-		`t` or `time`: an array with two values for a range of values between dates. Addtionally, if the first value is null,
+		`t` or `time`: an array with two values for a range of values between dates. Additionally, if the first value is null,
 		               all data since the beginning until the second value is returned. Similarly, if the second value is null,
 		               all data since the first value until now will be returned.
 		                
