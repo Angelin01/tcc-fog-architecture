@@ -45,7 +45,7 @@ class ClientResource(Resource):
 			try:
 				parameters = json.loads(request.payload)
 				if not isinstance(parameters, dict):
-					raise json.JSONDecodeError
+					return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			except (json.JSONDecodeError, UnicodeDecodeError):
 				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			
