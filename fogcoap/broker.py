@@ -2,7 +2,7 @@ import asyncio
 import json
 from aiocoap import Code, Message, Context
 from aiocoap.resource import Site, WKCResource, Resource
-from .db_manager import DatabaseManager, InvalidData
+from fogcoap.db_manager import DatabaseManager, InvalidData
 
 
 class ClientResource(Resource):
