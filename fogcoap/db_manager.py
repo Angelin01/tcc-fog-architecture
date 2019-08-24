@@ -341,16 +341,8 @@ class DatabaseManager:
 		for coll in self._database.list_collection_names(filter={'name': {'$regex': f'{self._Data}\.{client_filter}\.{datatype_filter}'}}):
 			_, client, datatype = coll.split('.')
 			
-			# Create the dicts for the client if it doesn't exist on the return yet
-			if not all_data.get(client):
-				all_data[client] = {}
-			
-			# Create the dicts for the datatype on the client if it doesn't exist on the return yet
-			if not all_data[client].get(datatype):
-				all_data[client][datatype] = {}
-			
 			# Convert the returns to a list and add it to the dict
-			all_data[client][datatype] = list(self._database[coll].find(date_filter))
+			all_data[datatype] = list(self._database[coll].find(date_filter))
 		
 		return all_data
 
@@ -442,7 +434,7 @@ class DatabaseManager:
 	
 	def close(self) -> None:
 		"""
-		Closes the connection to the database. If the database is ued again, it will be automatically re-opened.
+		Closes the connection to the database. If the database is used again, it will be automatically re-opened.
 		"""
 		self._client.close()
 	
