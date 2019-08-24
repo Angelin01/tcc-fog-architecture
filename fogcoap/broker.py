@@ -16,7 +16,7 @@ class ClientResource(Resource):
 		return Message(code=code, payload=json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii') if data is not None else b'')
 
 	def render_get(self, request: Message):
-		pass
+		return Message(payload=f'Client {self._name} exists'.encode('ascii'))
 	
 	def render_post(self, request: Message):
 		"""
@@ -87,10 +87,6 @@ class Broker:
 		self._root.add_resource(('.well-known', 'core'),
 		                        WKCResource(self._root.get_resources_as_linkheader))
 		self._setup_resources()
-		
-		asyncio.Task(Context.create_server_context(self._root, bind=('::', port)))
-		
-		asyncio.get_event_loop().run_forever()
 	
 	def _setup_resources(self):
 		self._setup_clients()
@@ -105,7 +101,9 @@ class Broker:
 		pass
 	
 	def run(self):
-		pass
+		self._setup_resources()
+		asyncio.Task(Context.create_server_context(self._root, bind=('::', self._port)))
+		asyncio.get_event_loop().run_forever()
 	
 	def stop(self):
 		pass
