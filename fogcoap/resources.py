@@ -24,12 +24,19 @@ def _gzip_payload(func):
 
 
 class BaseResource(Resource):
+	"""
+	Base resource class for other resource classes.
+	Simply contains the database manager in `self._db_manager` and provides de `_build_msg` method.
+	"""
 	def __init__(self, db_manager: DatabaseManager):
 		self._db_manager = db_manager
 		super().__init__()
 	
 	@staticmethod
 	def _build_msg(code: Code = None, data=None) -> Message:
+		"""
+		Prepares a `Message` object, adding code and dumping the json data
+		"""
 		if data is not None:
 			payload = json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii')
 		else:
@@ -38,6 +45,10 @@ class BaseResource(Resource):
 	
 
 class ListQueryResource(BaseResource):
+	"""
+	Resource that, given the database manager and a query function (and arguments) that returns a list with dicts contaning a `name` key,
+	generates a GET response listing said dicts and other attributes.
+	"""
 	def __init__(self, db_manager: DatabaseManager, query_func: str, *args, **kwargs):
 		self._get_response = self._build_msg(data={
 			item['name']: {key: value for (key, value) in item if key != 'name'}
@@ -47,11 +58,19 @@ class ListQueryResource(BaseResource):
 		
 	@_gzip_payload
 	def render_get(self, request: Message):
+		"""
+		Returns a json object where each key is the name of the queried object and it's value are the remaining attributes.
+		"""
 		return self._get_response
 
 
 class ClientResource(BaseResource):
 	def __init__(self, name: str, db_manager: DatabaseManager):
+		"""
+		Simple class for a client.
+		:param name: The client's registered name.
+		:param db_manager: An instance of the database manager.
+		"""
 		self._name = name
 		self._last_rcv_timestamp = 0
 		super().__init__(db_manager)
