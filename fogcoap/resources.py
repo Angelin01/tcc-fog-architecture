@@ -35,6 +35,21 @@ class BaseResource(Resource):
 		else:
 			payload = b''
 		return Message(code=code, payload=payload)
+	
+
+class AllClientsResource(BaseResource):
+	def __init__(self, db_manager: DatabaseManager):
+		self._get_response = self._build_msg(data={
+			client['name']: {
+				'id': client['_id']
+			}
+			for client in db_manager.query_clients()
+		})
+		super().__init__(db_manager)
+		
+	@_gzip_payload
+	def render_get(self, request: Message):
+		return self._get_response
 
 
 class ClientResource(BaseResource):
@@ -172,3 +187,4 @@ class ClientResource(BaseResource):
 		
 		return self._build_msg(code=Code.CHANGED if one_successful else Code.BAD_REQUEST,
 		                       data=insert_status)
+	
