@@ -113,12 +113,14 @@ class ClientResource(BaseResource):
 			"d": "temp",
 			"t": [null, 1566687475]
 		}
+		```
 		
 		Returns a gzip compressed json object containing 3 keys:
 		`c`: the clients name.
 		`l`: the UTC timestamp when the broker last received a message from the client,
 		     will be 0 if the broker hasn't received a message since startup.
-		`d`: the clients data, filtered according to parameters. `null` if `nd` was received with anything not interpreted as false.
+		`d`: the clients data, filtered according to parameters, where each key is a datatype and the values are the data sent by the client.
+		     `null` if `nd` was received with anything not interpreted as false (not set, `null`, `false`, `0`, etc).
 		"""
 		if len(request.payload) > 0:
 			# Load the json
@@ -224,4 +226,40 @@ class ClientResource(BaseResource):
 		
 		return self._build_msg(code=Code.CHANGED if one_successful else Code.BAD_REQUEST,
 		                       data=insert_status)
+
+
+def DatatypeResource(BaseResource):
+	def __init__(self, name: str, db_manager: DatabaseManager):
+		"""
+		Simple class for a datatype.
+		:param name: The datatype's registered name.
+		:param db_manager: An instance of the database manager.
+		"""
+		self._name = name
+		super().__init__(db_manager)
 	
+	@_gzip_payload
+	def render_get(self, request: Message):
+		"""
+		Get method for the dataype, getting data the clients have sent of the specified datatype.
+		If sent with an empty payload, will simply return all data.
+		If a payload is present, expects a gzip compressed json payload (preferably minified) with the following optional key:
+		`t` or `time`: an array with two values for a range of values between dates. Additionally, if the first value is null,
+					   all data since the beginning until the second value is returned. Similarly, if the second value is null,
+					   all data since the first value until now will be returned.
+
+		The following is a valid payload::
+		```
+		{
+			"t": [null, 1566687475]
+		}
+		```
+
+		Returns a gzip compressed json object containing 3 keys:
+		`n`: the datatype's name.
+		`d`: the data of the specified datatype, filtered according to parameters, with each key corresponding to one client's name and the values
+		     the requested data that said client sent.
+		     
+		If you must filter by client, use the client resource instead.
+		"""
+		pass
