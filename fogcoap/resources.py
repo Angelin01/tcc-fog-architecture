@@ -44,22 +44,42 @@ class BaseResource(Resource):
 		return Message(code=code, payload=payload)
 	
 
-class ListQueryResource(BaseResource):
+class AllClientsResource(BaseResource):
 	"""
-	Resource that, given the database manager and a query function (and arguments) that returns a list with dicts contaning a `name` key,
-	generates a GET response listing said dicts and other attributes.
+	Provides a GET method that returns all registered clients.
 	"""
-	def __init__(self, db_manager: DatabaseManager, query_func: str, *args, **kwargs):
+	def __init__(self, db_manager: DatabaseManager):
 		self._get_response = self._build_msg(data={
-			item['name']: {key: value for (key, value) in item if key != 'name'}
-			for item in getattr(db_manager, query_func)(*args, **kwargs)
+			client['name']: {key: value for (key, value) in client if key != 'name'}
+			for client in db_manager.query_clients()
 		})
 		super().__init__(db_manager)
 		
 	@_gzip_payload
 	def render_get(self, request: Message):
 		"""
-		Returns a json object where each key is the name of the queried object and it's value are the remaining attributes.
+		Returns a json object where each key is the name of the client and it's value is another object with it's remaining attributes.
+		"""
+		return self._get_response
+
+
+class AllDatatypesResource(BaseResource):
+	"""
+	Provides a GET method that returns all registered datatypes.
+	"""
+	
+	def __init__(self, db_manager: DatabaseManager):
+		self._get_response = self._build_msg(data={
+			datatype['name']: {key: value for (key, value) in datatype if key != 'name'}
+			for datatype in db_manager.query_datatypes()
+		})
+		super().__init__(db_manager)
+	
+	@_gzip_payload
+	def render_get(self, request: Message):
+		"""
+		Returns a json object where each key is the name of the datatype and it's value is another object with it's remaining attributes.
+		See `StorageType` for the enum values of the `storage_type` attribute.
 		"""
 		return self._get_response
 
