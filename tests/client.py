@@ -1,7 +1,7 @@
 import aiocoap as coap
 import asyncio
 import json
-from gzip import compress
+from gzip import compress, decompress
 from sys import argv, exit
 
 
@@ -24,7 +24,7 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 		exit(1)
 
 	print(f'Response code: {response.code}\n'
-	      f'Payload: {response.payload}')
+	      f'Payload: {decompress(response.payload)}')
 
 
 if __name__ == '__main__':
