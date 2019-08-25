@@ -6,21 +6,44 @@ from aiocoap.resource import Resource
 from fogcoap import DatabaseManager, InvalidData
 
 
-class ClientResource(Resource):
-	def __init__(self, name: str, db_manager: DatabaseManager):
-		self._name = name
-		self._db_manager = db_manager
-		self._last_rcv_timestamp = 0
-		super().__init__()
+def _gzip_payload(func):
+	# Decorator for gzip compression
+	# Takes the request payload, decompresses (and checks for errors), calls the method and finally recompresses the response
+	def wraps(self: BaseResource, request: Message):
+		try:
+			request.payload = gzdecompress(request.payload)
+		except OSError:
+			# Since the received message was not properly compressed, return a non compressed response just in case
+			return Message(code=Code.BAD_REQUEST, payload=b'{"error":"Bad GZIP compression"}')
 		
+		response = func(self, request)
+		response.payload = gzcompress(response.payload)
+		return response
+	
+	return wraps
+
+
+class BaseResource(Resource):
+	def __init__(self, db_manager: DatabaseManager):
+		self._db_manager = db_manager
+		super().__init__()
+	
 	@staticmethod
 	def _build_msg(code: Code = None, data=None) -> Message:
 		if data is not None:
-			payload = gzcompress(json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii'))
+			payload = json.dumps(data, separators=(',', ':'), ensure_ascii=True).encode('ascii')
 		else:
 			payload = b''
 		return Message(code=code, payload=payload)
 
+
+class ClientResource(BaseResource):
+	def __init__(self, name: str, db_manager: DatabaseManager):
+		self._name = name
+		self._last_rcv_timestamp = 0
+		super().__init__(db_manager)
+
+	@_gzip_payload
 	def render_get(self, request: Message):
 		"""
 		Get method for the client, getting data the client has sent.
@@ -46,15 +69,9 @@ class ClientResource(Resource):
 		`d`: the clients data, filtered according to parameters. `null` if `nd` was received with anything not interpreted as false.
 		"""
 		if len(request.payload) > 0:
-			# Decompress payload
-			try:
-				payload = gzdecompress(request.payload)
-			except OSError:
-				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad GZIP compression'})
-			
 			# Load the json
 			try:
-				parameters = json.loads(payload)
+				parameters = json.loads(request.payload)
 				if not isinstance(parameters, dict):
 					return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 			except (json.JSONDecodeError, UnicodeDecodeError):
@@ -89,6 +106,7 @@ class ClientResource(Resource):
 			'd': clients_data
 		})
 	
+	@_gzip_payload
 	def render_post(self, request: Message):
 		"""
 		Post method for the client, for inserting data values.
@@ -117,15 +135,9 @@ class ClientResource(Resource):
 		Similarly, if the loaded object is not a list, the error shall be `"JSON top object not an array"`.
 		The response payload will be gzip compressed.
 		"""
-		# Decompress payload
-		try:
-			payload = gzdecompress(request.payload)
-		except OSError:
-			return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad GZIP compression'})
-		
 		# Load the json data
 		try:
-			data_list = json.loads(payload)
+			data_list = json.loads(request.payload)
 		except (json.decoder.JSONDecodeError, UnicodeDecodeError):
 			return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
 		

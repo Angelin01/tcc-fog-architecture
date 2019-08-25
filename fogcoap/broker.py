@@ -2,8 +2,8 @@ import asyncio
 from signal import SIGINT, SIGTERM, SIGHUP
 from aiocoap import Context
 from aiocoap.resource import Site, WKCResource
-from fogcoap import DatabaseManager
-from resources import ClientResource
+from fogcoap.db_manager import DatabaseManager
+from fogcoap.resources import ClientResource
 
 
 class Broker:
