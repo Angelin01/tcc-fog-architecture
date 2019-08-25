@@ -1,5 +1,5 @@
 import asyncio
-from signal import SIGINT, SIGTERM, SIGHUP
+from signal import SIGINT, SIGTERM
 from aiocoap import Context
 from aiocoap.resource import Site, WKCResource
 from fogcoap.db_manager import DatabaseManager
@@ -36,7 +36,6 @@ class Broker:
 		self._loop = asyncio.get_event_loop()
 		self._loop.add_signal_handler(SIGTERM, self.stop)
 		self._loop.add_signal_handler(SIGINT, self.stop)
-		self._loop.add_signal_handler(SIGHUP, self.stop)
 		
 		asyncio.Task(Context.create_server_context(self._root, bind=('::', self._port)))
 		self._loop.run_forever()
