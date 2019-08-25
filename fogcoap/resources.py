@@ -37,13 +37,11 @@ class BaseResource(Resource):
 		return Message(code=code, payload=payload)
 	
 
-class AllClientsResource(BaseResource):
-	def __init__(self, db_manager: DatabaseManager):
+class ListQueryResource(BaseResource):
+	def __init__(self, db_manager: DatabaseManager, query_func: str, *args, **kwargs):
 		self._get_response = self._build_msg(data={
-			client['name']: {
-				'id': client['_id']
-			}
-			for client in db_manager.query_clients()
+			item['name']: {key: value for (key, value) in item if key != 'name'}
+			for item in getattr(db_manager, query_func)(*args, **kwargs)
 		})
 		super().__init__(db_manager)
 		
