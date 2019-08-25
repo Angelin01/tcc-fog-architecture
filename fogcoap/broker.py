@@ -1,7 +1,7 @@
 import asyncio
 import json
-from gzip import compress as gzcompress
-from gzip import decompress as gzdecompress
+from signal import SIGINT, SIGTERM, SIGHUP
+from gzip import compress as gzcompress, decompress as gzdecompress
 from datetime import datetime
 from aiocoap import Code, Message, Context
 from aiocoap.resource import Site, WKCResource, Resource
@@ -168,12 +168,15 @@ class Broker:
 	def __init__(self, db_manager: DatabaseManager, port: int = 5683):
 		self._db_manager = db_manager
 		self._port = port
+		
+		self._loop = None
+		
 		self._root = Site()
-		self._root.add_resource(('.well-known', 'core'),
-		                        WKCResource(self._root.get_resources_as_linkheader))
 		self._setup_resources()
 	
 	def _setup_resources(self):
+		self._root.add_resource(('.well-known', 'core'),
+		                        WKCResource(self._root.get_resources_as_linkheader))
 		self._setup_clients()
 		self._setup_datatypes()
 		
@@ -187,8 +190,15 @@ class Broker:
 	
 	def run(self):
 		self._setup_resources()
+		
+		self._loop = asyncio.get_event_loop()
+		self._loop.add_signal_handler(SIGTERM, self.stop)
+		self._loop.add_signal_handler(SIGINT, self.stop)
+		self._loop.add_signal_handler(SIGHUP, self.stop)
+		
 		asyncio.Task(Context.create_server_context(self._root, bind=('::', self._port)))
-		asyncio.get_event_loop().run_forever()
+		self._loop.run_forever()
 	
-	def stop(self):
-		pass
+	def stop(self, s=None, f=None):
+		self._loop.stop()
+		self._loop = None
