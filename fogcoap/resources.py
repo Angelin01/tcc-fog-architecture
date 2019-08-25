@@ -228,7 +228,7 @@ class ClientResource(BaseResource):
 		                       data=insert_status)
 
 
-def DatatypeResource(BaseResource):
+class DatatypeResource(BaseResource):
 	def __init__(self, name: str, db_manager: DatabaseManager):
 		"""
 		Simple class for a datatype.
@@ -241,20 +241,18 @@ def DatatypeResource(BaseResource):
 	@_gzip_payload
 	def render_get(self, request: Message):
 		"""
-		Get method for the dataype, getting data the clients have sent of the specified datatype.
+		Get method for the datatype, getting data the clients have sent of the specified datatype.
 		If sent with an empty payload, will simply return all data.
 		If a payload is present, expects a gzip compressed json payload (preferably minified) with the following optional key:
 		`t` or `time`: an array with two values for a range of values between dates. Additionally, if the first value is null,
 					   all data since the beginning until the second value is returned. Similarly, if the second value is null,
 					   all data since the first value until now will be returned.
-
+		
 		The following is a valid payload::
 		```
-		{
-			"t": [null, 1566687475]
-		}
+		{"t": [null, 1566687475]}
 		```
-
+		
 		Returns a gzip compressed json object containing 3 keys:
 		`n`: the datatype's name.
 		`d`: the data of the specified datatype, filtered according to parameters, with each key corresponding to one client's name and the values
@@ -262,4 +260,33 @@ def DatatypeResource(BaseResource):
 		     
 		If you must filter by client, use the client resource instead.
 		"""
-		pass
+		if len(request.payload) > 0:
+			# Load the json
+			try:
+				parameters = json.loads(request.payload)
+				if not isinstance(parameters, dict):
+					return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			except (json.JSONDecodeError, UnicodeDecodeError):
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			
+			# Verify parameters
+			timerange = parameters.get('t') or parameters.get('time')
+			try:
+				datatype_data = self._db_manager.query_data_type(self._name, timerange)
+			except (InvalidData, ValueError, TypeError) as e:
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': str(e)})
+		
+		else:
+			datatype_data = self._db_manager.query_data_type(self._name)
+			
+		# Reformat data for response
+		if datatype_data is not None:
+			for client in datatype_data.values():
+				for item in client:
+					item['_id'] = str(item['_id'])
+					item['datetime'] = int(item['datetime'].timestamp())
+		
+		return self._build_msg(data={
+			'c': self._name,
+			'd': datatype_data
+		})
