@@ -44,7 +44,7 @@ class BaseResource(Resource):
 		return Message(code=code, payload=payload)
 	
 
-class AllClientsResource(BaseResource):
+class ListClientsResource(BaseResource):
 	"""
 	Provides a GET method that returns all registered clients.
 	"""
@@ -63,7 +63,7 @@ class AllClientsResource(BaseResource):
 		return self._get_response
 
 
-class AllDatatypesResource(BaseResource):
+class ListDatatypesResource(BaseResource):
 	"""
 	Provides a GET method that returns all registered datatypes.
 	"""
