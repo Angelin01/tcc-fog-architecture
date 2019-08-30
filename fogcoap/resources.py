@@ -85,6 +85,10 @@ class ListDatatypesResource(BaseResource):
 
 
 class ClientResource(BaseResource):
+	"""
+	Representation of a client, for receiving the data sent from the client and for querying the stored data.
+	"""
+	
 	def __init__(self, name: str, db_manager: DatabaseManager):
 		"""
 		Simple class for a client.
@@ -229,6 +233,10 @@ class ClientResource(BaseResource):
 
 
 class DatatypeResource(BaseResource):
+	"""
+	Representation of a datatype, for querying the stored data by datatype instead of by client.
+	"""
+	
 	def __init__(self, name: str, db_manager: DatabaseManager):
 		"""
 		Simple class for a datatype.
