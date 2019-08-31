@@ -3,6 +3,11 @@ from datetime import datetime
 from gzip import compress as gzcompress, decompress as gzdecompress
 from aiocoap import Code, Message
 from aiocoap.resource import Resource
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.hashes import SHA256
+from cryptography.exceptions import InvalidSignature
 from fogcoap import DatabaseManager, InvalidData
 
 
@@ -21,6 +26,33 @@ def _gzip_payload(func):
 		return response
 	
 	return wraps
+	
+	
+def _verify_sig(func):
+	def inner(self: ClientResource, request: Message):
+		if len(request.payload) < 4:
+			return Message(code=Code.BAD_REQUEST, payload=b'{"error":"Bad request format"}')
+		
+		sig_len = int.from_bytes(request.payload[:2], 'big')
+		if len(request.payload) < 4 + sig_len:
+			return Message(code=Code.BAD_REQUEST, payload=b'{"error":"Bad request format"}')
+		
+		signature = request.payload[2:2 + sig_len]
+		message = request.payload[2 + sig_len:]
+		
+		try:
+			self._ecc_pub_key.verify(
+				signature,
+				message,
+				ec.ECDSA(SHA256())
+			)
+		except InvalidSignature:
+			return Message(code=Code.UNAUTHORIZED)
+		else:
+			request.payload = message
+			return func(self, message)
+	
+	return inner
 
 
 class BaseResource(Resource):
@@ -89,13 +121,15 @@ class ClientResource(BaseResource):
 	Representation of a client, for receiving the data sent from the client and for querying the stored data.
 	"""
 	
-	def __init__(self, name: str, db_manager: DatabaseManager):
+	def __init__(self, name: str, ecc_public_key: bytes, db_manager: DatabaseManager):
 		"""
 		Simple class for a client.
 		:param name: The client's registered name.
+		:param ecc_public_key: The client's public ECC PEM encoded key.
 		:param db_manager: An instance of the database manager.
 		"""
 		self._name = name
+		self._ecc_pub_key = serialization.load_pem_public_key(ecc_public_key, default_backend())
 		self._last_rcv_timestamp = 0
 		super().__init__(db_manager)
 
@@ -164,11 +198,17 @@ class ClientResource(BaseResource):
 			'd': clients_data
 		})
 	
+	@_verify_sig
 	@_gzip_payload
 	def render_post(self, request: Message):
 		"""
 		Post method for the client, for inserting data values.
-		Expects a gzip compressed payload with a json object list (preferably minified), with each object containing 3 values:
+		Expects a payload with the following format:
+		First 2 bytes are the signature length, with the first being the msb (for example, 0x00f0 is interpreted as 240 decimal).
+		The following bytes are the message signature, made with the client's ECC private key and SHA256 hash. It must have the length
+		specified by the first 2 bytes.
+		The remaining bytes are the message itself, which must be a gzip compressed payload with a json object list (preferably minified),
+		with each object containing 3 values:
 		`n` or `name`: the name specified when registering a `datatype`.
 		`v` or `value`: the actual value for the data.
 		`t` or `time`: timestamp for when the data was collected, as an int timestamp or str iso formatted string (preferred UTC time)
