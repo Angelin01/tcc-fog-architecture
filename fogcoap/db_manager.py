@@ -5,6 +5,8 @@ from pymongo.errors import ConnectionFailure, DuplicateKeyError
 from enum import Enum
 from bson.objectid import ObjectId
 from datetime import datetime
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 from typing import Union, Tuple, Optional
 
 
@@ -95,12 +97,17 @@ class DatabaseManager:
 		
 		self.warnings = warnings
 
-	def register_client(self, client: str) -> ObjectId:
+	def register_client(self, client: str, ecc_publc_key: bytes) -> ObjectId:
 		"""
 		Registers a client on the database.
 		:param client: The client's name.
+		:param ecc_publc_key: A ECC PEM encoded public key.
 		:return: The ObjectId for the client in the database.
 		"""
+		
+		# Checks for errors on the public key, will be used for nothing else
+		serialization.load_pem_public_key(ecc_publc_key, default_backend())
+		
 		# ======================= #
 		# Check for similarities if needed #
 		# TODO Better similarity check
@@ -112,7 +119,7 @@ class DatabaseManager:
 		# ======================= #
 		# Actual insert
 		try:
-			obj_id = self._client_registry.insert_one({'name': client}).inserted_id
+			obj_id = self._client_registry.insert_one({'name': client, 'ecc_public_key': ecc_publc_key}).inserted_id
 		except DuplicateKeyError:
 			database_logger.error(f'Failed to add client {client} as it\'s a duplicate')
 			raise
@@ -528,4 +535,9 @@ class InvalidData(Exception):
 
 class InvalidClient(Exception):
 	"""Raised when an unregisted client is specified when sending data"""
+	pass
+
+
+class InvalidECCKey(Exception):
+	"""Raised when the provided ECC Key is invalid"""
 	pass

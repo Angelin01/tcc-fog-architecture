@@ -48,4 +48,5 @@ class Broker:
 	
 	def stop(self, s=None, f=None):
 		self._loop.stop()
+		self._db_manager.close()
 		self._loop = None
