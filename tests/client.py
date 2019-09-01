@@ -14,7 +14,7 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 	
 	# Sign message if a key was passed
 	if priv_key is not None:
-		signature = priv_key.sign(compressed_payload, SHA256())
+		signature = priv_key.sign(compressed_payload, ec.ECDSA(SHA256()))
 		compressed_payload = len(signature).to_bytes(2, 'big') + signature + compressed_payload
 	
 	protocol = await coap.Context.create_client_context()
