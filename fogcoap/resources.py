@@ -29,7 +29,7 @@ def _gzip_payload(func):
 	
 	
 def _verify_sig(func):
-	def inner(self: ClientResource, request: Message):
+	def inner(self, request: Message):
 		if len(request.payload) < 4:
 			return Message(code=Code.BAD_REQUEST, payload=b'{"error":"Bad request format"}')
 		
@@ -82,7 +82,7 @@ class ListClientsResource(BaseResource):
 	"""
 	def __init__(self, db_manager: DatabaseManager):
 		self._get_response = self._build_msg(data={
-			client['name']: {key: value for (key, value) in client if key != 'name'}
+			client['name']: {key: value for (key, value) in client if key != 'name' and key != 'ecc_public_key'}
 			for client in db_manager.query_clients()
 		})
 		super().__init__(db_manager)

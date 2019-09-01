@@ -29,6 +29,7 @@ class StorageType(Enum):
 	def is_instance(value, value_type):
 		return StorageType._type_storage_dict.get(type(value)) == value_type
 	
+	
 StorageType._type_storage_dict = {
 	int: StorageType.NUMBER,
 	float: StorageType.NUMBER,
