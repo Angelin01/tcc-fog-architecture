@@ -108,10 +108,17 @@ class ListDatatypesResource(BaseResource):
 	"""
 	
 	def __init__(self, db_manager: DatabaseManager):
-		self._get_response = self._build_msg(data={
-			datatype['name']: {key: value for (key, value) in datatype if key != 'name'}
-			for datatype in db_manager.query_datatypes()
-		})
+		data = {datatype['name']: {key: value for (key, value) in datatype.items() if key != 'name'}
+		        for datatype in db_manager.query_datatypes()
+		}
+		
+		for value in data.values():
+			if isinstance(value, ObjectId):
+				value = str(value)
+			elif isinstance(value, datetime):
+				value = int(value.timestamp())
+		
+		self._get_response = self._build_msg(data=data)
 		super().__init__(db_manager)
 	
 	@_gzip_payload
