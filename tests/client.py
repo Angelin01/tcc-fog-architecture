@@ -38,7 +38,7 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 
 if __name__ == '__main__':
 	if not 3 <= len(argv) <= 6:
-		print(f'Usage: {argv[0]} host uri [method] [payload json str|file]')
+		print(f'Usage: {argv[0]} host uri [method] [payload json str|file] [keyfile]')
 		exit(1)
 
 	HOST = argv[1]
