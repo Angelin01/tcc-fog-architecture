@@ -82,7 +82,7 @@ class ListClientsResource(BaseResource):
 	Provides a GET method that returns all registered clients.
 	"""
 	def __init__(self, db_manager: DatabaseManager):
-		data = {client['name']: {key: value for (key, value) in client if key != 'name' and key != 'ecc_public_key'}
+		data = {client['name']: {key: value for (key, value) in client.items() if key != 'name' and key != 'ecc_public_key'}
 		        for client in db_manager.query_clients()
 		}
 		for value in data.values():
