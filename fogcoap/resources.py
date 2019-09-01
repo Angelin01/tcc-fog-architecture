@@ -3,6 +3,7 @@ from datetime import datetime
 from gzip import compress as gzcompress, decompress as gzdecompress
 from aiocoap import Code, Message
 from aiocoap.resource import Resource
+from bson import ObjectId
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -81,10 +82,16 @@ class ListClientsResource(BaseResource):
 	Provides a GET method that returns all registered clients.
 	"""
 	def __init__(self, db_manager: DatabaseManager):
-		self._get_response = self._build_msg(data={
-			client['name']: {key: value for (key, value) in client if key != 'name' and key != 'ecc_public_key'}
-			for client in db_manager.query_clients()
-		})
+		data = {client['name']: {key: value for (key, value) in client if key != 'name' and key != 'ecc_public_key'}
+		        for client in db_manager.query_clients()
+		}
+		for value in data.values():
+			if isinstance(value, ObjectId):
+				value = str(value)
+			elif isinstance(value, datetime):
+				value = int(value.timestamp())
+		
+		self._get_response = self._build_msg(data=data)
 		super().__init__(db_manager)
 		
 	@_gzip_payload
