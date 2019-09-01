@@ -12,9 +12,7 @@ class Broker:
 		self._port = port
 		
 		self._loop = None
-		
 		self._root = Site()
-		self._setup_resources()
 	
 	def _setup_resources(self):
 		self._root.add_resource(('.well-known', 'core'),
@@ -27,7 +25,7 @@ class Broker:
 		                        ListClientsResource(self._db_manager))
 		for client in self._db_manager.query_clients():
 			self._root.add_resource(('client', client['name']),
-			                        ClientResource(client['name'], self._db_manager))
+			                        ClientResource(client['name'], client['ecc_public_key'], self._db_manager))
 		
 	def _setup_datatypes(self):
 		self._root.add_resource(('listdatatypes',),
@@ -48,4 +46,5 @@ class Broker:
 	
 	def stop(self, s=None, f=None):
 		self._loop.stop()
+		self._db_manager.close()
 		self._loop = None

@@ -4,10 +4,20 @@ import json
 from gzip import compress, decompress
 from sys import argv, exit
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.hashes import SHA256
 
-async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: dict = None):
+
+async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: dict = None, priv_key: ec.EllipticCurvePrivateKey = None):
 	compressed_payload = compress(json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii'), 9) if payload else ''
-	# compressed_payload = json.dumps(payload, separators=(',', ':'), ensure_ascii=True).encode('ascii') if payload else b''
+	
+	# Sign message if a key was passed
+	if priv_key is not None:
+		signature = priv_key.sign(compressed_payload, ec.ECDSA(SHA256()))
+		compressed_payload = len(signature).to_bytes(2, 'big') + signature + compressed_payload
+	
 	protocol = await coap.Context.create_client_context()
 
 	uri = f'coap://{host}/{resource}'
@@ -28,8 +38,8 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 
 
 if __name__ == '__main__':
-	if not 2 < len(argv) < 6:
-		print(f'Usage: {argv[0]} host uri [method] [payload json str|file]')
+	if not 3 <= len(argv) <= 6:
+		print(f'Usage: {argv[0]} host uri [method] [payload json str|file] [keyfile]')
 		exit(1)
 
 	HOST = argv[1]
@@ -69,5 +79,15 @@ if __name__ == '__main__':
 			except FileNotFoundError:
 				print(f'{argv[4]} is not a valid JSON string or JSON file')
 				exit(1)
+				
+	PRIV_KEY = None
+	if len(argv) >= 6:
+		try:
+			with open(argv[5], 'rb') as key_file:
+				PRIV_KEY = serialization.load_pem_private_key(key_file.read(), None, default_backend())
+		except ValueError:
+			print(f'{argv[5]} does not contain a valid PEM encoded ECC private key')
+		except FileNotFoundError:
+			print(f'Could not find or read file {argv[5]}')
 
-	asyncio.run(main(HOST, RESOURCE, METHOD, PAYLOAD))
+	asyncio.run(main(HOST, RESOURCE, METHOD, PAYLOAD, PRIV_KEY))
