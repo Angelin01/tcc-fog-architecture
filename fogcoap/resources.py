@@ -85,11 +85,11 @@ class ListClientsResource(BaseResource):
 		data = {client['name']: {key: value for (key, value) in client.items() if key != 'name' and key != 'ecc_public_key'}
 		        for client in db_manager.query_clients()
 		}
-		for value in data.values():
+		for key, value in data.items():
 			if isinstance(value, ObjectId):
-				value = str(value)
+				data[key] = str(value)
 			elif isinstance(value, datetime):
-				value = int(value.timestamp())
+				data[key] = int(value.timestamp())
 		
 		self._get_response = self._build_msg(data=data)
 		super().__init__(db_manager)
@@ -112,11 +112,11 @@ class ListDatatypesResource(BaseResource):
 		        for datatype in db_manager.query_datatypes()
 		}
 		
-		for value in data.values():
+		for key, value in data.items():
 			if isinstance(value, ObjectId):
-				value = str(value)
+				data[key] = str(value)
 			elif isinstance(value, datetime):
-				value = int(value.timestamp())
+				data[key] = int(value.timestamp())
 		
 		self._get_response = self._build_msg(data=data)
 		super().__init__(db_manager)
