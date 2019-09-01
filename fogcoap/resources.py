@@ -51,7 +51,7 @@ def _verify_sig(func):
 			return Message(code=Code.UNAUTHORIZED)
 		else:
 			request.payload = message
-			return func(self, message)
+			return func(self, request)
 	
 	return inner
 
