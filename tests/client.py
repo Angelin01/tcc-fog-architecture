@@ -82,7 +82,7 @@ if __name__ == '__main__':
 	PRIV_KEY = None
 	if len(argv) >= 6:
 		try:
-			with open(argv[5]) as key_file:
+			with open(argv[5], 'rb') as key_file:
 				PRIV_KEY = serialization.load_pem_private_key(key_file.read(), None, default_backend())
 		except ValueError:
 			print(f'{argv[5]} does not contain a valid PEM encoded ECC private key')
