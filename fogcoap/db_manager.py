@@ -48,19 +48,18 @@ class DatabaseManager:
 	_TypeMetadataNameIndex = 'type_index'
 	_Data = 'data'
 
-	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warnings: bool = True) -> None:
+	def __init__(self, database: str, uri: str = 'mongodb://localhost', warnings: bool = True) -> None:
 		"""
 		Instances and connects a DatabaseManager to a MongoDB.
 		:param database: The database name to use.
-		:param host: The optional host to connect to, defaults to `localhost`.
-		:param port: The optional port to connect to, defaults to `27017`.
+		:param uri: A connection uri used to connect to the database, same as would be used in connecting with Mongo normally.
 		:param warnings: When set to true, the Manager will throw warnings when creating datatypes or registering clients with similar
 		                          names to ones previously created, or when abnormalies happen, for example when data with a timestamp distant from
 		                          the server's is received.
 		"""
 		# Setup logger #
 		# ======================= #
-		formatter = logging.Formatter(f'%(asctime)s - {database}@{host}:{port} - %(levelname)s - %(message)s')
+		formatter = logging.Formatter(f'%(asctime)s - {database} - %(levelname)s - %(message)s')
 		handler = logging.StreamHandler()
 		handler.setFormatter(formatter)
 
@@ -75,14 +74,14 @@ class DatabaseManager:
 		# Connect to database and setup data structure #
 		# ======================= #
 		
-		self._client = pymongo.MongoClient(host, port)
+		self._client = pymongo.MongoClient(uri)
 		try:
 			# The ismaster command is cheap and does not require auth.
 			self._client.admin.command('ismaster')
 		except ConnectionFailure:
-			database_logger.critical(f'Database connection to {host}:{port} failed', flush=True)
+			database_logger.critical(f'Database connection to {uri} failed', flush=True)
 			raise
-		database_logger.info(f'Connected to database {database} on {host}:{port}')
+		database_logger.info(f'Connected to database {database}')
 
 		self._database = self._client[database]
 
