@@ -54,8 +54,8 @@ class DatabaseManager:
 		:param database: The database name to use.
 		:param uri: A connection uri used to connect to the database, same as would be used in connecting with Mongo normally.
 		:param warnings: When set to true, the Manager will throw warnings when creating datatypes or registering clients with similar
-		                          names to ones previously created, or when abnormalies happen, for example when data with a timestamp distant from
-		                          the server's is received.
+		                 names to ones previously created, or when abnormalies happen, for example when data with a timestamp distant from
+		                 the server's is received.
 		"""
 		# Setup logger #
 		# ======================= #
