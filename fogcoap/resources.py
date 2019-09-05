@@ -27,7 +27,7 @@ def _gzip_payload(func):
 		return response
 	
 	return wraps
-	
+
 	
 def _verify_sig(func):
 	def inner(self, request: Message):
