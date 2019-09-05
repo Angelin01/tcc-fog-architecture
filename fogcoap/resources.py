@@ -355,3 +355,37 @@ class DatatypeResource(BaseResource):
 			'c': self._name,
 			'd': datatype_data
 		})
+
+
+class AllData(BaseResource):
+	@_gzip_payload
+	def render_get(self, request: Message):
+		if len(request.payload) > 0:
+			# Load the json
+			try:
+				parameters = json.loads(request.payload)
+				if not isinstance(parameters, dict):
+					return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			except (json.JSONDecodeError, UnicodeDecodeError):
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			
+			# Verify parameters
+			timerange = parameters.get('t') or parameters.get('time')
+			try:
+				data = self._db_manager.query_all(timerange)
+			except (InvalidData, ValueError, TypeError) as e:
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': str(e)})
+		
+		else:
+			data = self._db_manager.query_all()
+		
+		# Convert datetimes to timestamps and ObjectIds to strings
+		for client in data.values():
+			for datatype in client.values():
+				for key, value in datatype.items():
+					if isinstance(value, ObjectId):
+						data[client][datatype][key] = str(value)
+					elif isinstance(value, datetime):
+						data[client][datatype][key] = int(value.timestamp())
+		
+		return self._build_msg(data=data)
