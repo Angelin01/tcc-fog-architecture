@@ -32,9 +32,12 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 		print('Failed to fetch resource:')
 		print(e)
 		exit(1)
-
-	print(f'Response code: {response.code}\n'
-	      f'Payload: {decompress(response.payload)}')
+	try:
+		print(f'Response code: {response.code}\n'
+	          f'Payload: {decompress(response.payload)}')
+	except OSError:
+		print(f'Response code: {response.code}\n'
+		      f'Raw Payload: {response.payload}')
 
 
 if __name__ == '__main__':
