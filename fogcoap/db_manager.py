@@ -291,7 +291,7 @@ class DatabaseManager:
 					if v_type.value != datatype_info['array_type']:
 						database_logger.info('Received data insert with incorrect value type')
 						raise InvalidData('Value type in list is different from the registered array type')
-					if v_type is not StorageType.STR:
+					if v_type is not StorageType.STR and datatype_info['valid_bounds'] is not None:
 						if (datatype_info['valid_bounds'][0] is not None and data_value < datatype_info['valid_bounds'][0]) or \
 						   (datatype_info['valid_bounds'][1] is not None and data_value > datatype_info['valid_bounds'][1]):
 							database_logger.info('Received data insert with value outside the allowed bounds')
