@@ -4,6 +4,7 @@ from aiocoap import Context
 from aiocoap.resource import Site, WKCResource
 from fogcoap.db_manager import DatabaseManager
 from fogcoap.resources import ClientResource, DatatypeResource, ListClientsResource, ListDatatypesResource, AllData
+from fogcoap.alerts import ClientAlert
 
 
 class Broker:
@@ -28,6 +29,8 @@ class Broker:
 		for client in self._db_manager.query_clients():
 			self._root.add_resource(('client', client['name']),
 			                        ClientResource(client['name'], client['ecc_public_key'], self._db_manager))
+			self._root.add_resource(('alert', client['name']),
+			                        ClientAlert())
 		
 	def _setup_datatypes(self):
 		self._root.add_resource(('listdatatypes',),
