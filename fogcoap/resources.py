@@ -355,3 +355,63 @@ class DatatypeResource(BaseResource):
 			'c': self._name,
 			'd': datatype_data
 		})
+
+
+class AllData(BaseResource):
+	@_gzip_payload
+	def render_get(self, request: Message):
+		"""
+		Get method all data in the database;
+		If sent with an empty payload, will simply return all data.
+		If a payload is present, expects a gzip compressed json payload (preferably minified) with the following optional key:
+		`t` or `time`: an array with two values for a range of values between dates. Additionally, if the first value is null,
+					   all data since the beginning until the second value is returned. Similarly, if the second value is null,
+					   all data since the first value until now will be returned.
+
+		The following is a valid payload::
+		```
+		{"t": [null, 1566687475]}
+		```
+		
+		Returns a gzip compressed json object with the following structure:
+		{
+		  "client1": {
+		    "datatype1": [ {"_id": ID, "v": VALUE, "t": TIMESTAMP}, ... ],
+		    "datatype2": [ ... ],
+		  },
+		  "client2": { ...
+		  }
+		}
+		
+		"""
+		if len(request.payload) > 0:
+			# Load the json
+			try:
+				parameters = json.loads(request.payload)
+				if not isinstance(parameters, dict):
+					return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			except (json.JSONDecodeError, UnicodeDecodeError):
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': 'Bad JSON format'})
+			
+			# Verify parameters
+			timerange = parameters.get('t') or parameters.get('time')
+			try:
+				data = self._db_manager.query_all(timerange)
+			except (InvalidData, ValueError, TypeError) as e:
+				return self._build_msg(code=Code.BAD_REQUEST, data={'error': str(e)})
+		
+		else:
+			data = self._db_manager.query_all()
+		
+		# Convert datetimes to timestamps and ObjectIds to strings
+		# 4 nested loops, gods help us all
+		for client in data.values():
+			for datatype in client.values():
+				for item in datatype:
+					for key, value in item.items():
+						if isinstance(value, ObjectId):
+							item[key] = str(value)
+						elif isinstance(value, datetime):
+							item[key] = int(value.timestamp())
+		
+		return self._build_msg(data=data)

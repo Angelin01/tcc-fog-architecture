@@ -3,7 +3,7 @@ from signal import SIGINT, SIGTERM
 from aiocoap import Context
 from aiocoap.resource import Site, WKCResource
 from fogcoap.db_manager import DatabaseManager
-from fogcoap.resources import ClientResource, DatatypeResource, ListClientsResource, ListDatatypesResource
+from fogcoap.resources import ClientResource, DatatypeResource, ListClientsResource, ListDatatypesResource, AllData
 
 
 class Broker:
@@ -17,6 +17,8 @@ class Broker:
 	def _setup_resources(self):
 		self._root.add_resource(('.well-known', 'core'),
 		                        WKCResource(self._root.get_resources_as_linkheader))
+		self._root.add_resource(('alldata',),
+		                        AllData(self._db_manager))
 		self._setup_clients()
 		self._setup_datatypes()
 		

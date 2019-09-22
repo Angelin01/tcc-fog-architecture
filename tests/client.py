@@ -32,9 +32,12 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 		print('Failed to fetch resource:')
 		print(e)
 		exit(1)
-
-	print(f'Response code: {response.code}\n'
-	      f'Payload: {decompress(response.payload)}')
+	try:
+		print(f'Response code: {response.code}\n'
+	          f'Payload: {decompress(response.payload)}')
+	except OSError:
+		print(f'Response code: {response.code}\n'
+		      f'Raw Payload: {response.payload}')
 
 
 if __name__ == '__main__':
@@ -56,13 +59,14 @@ if __name__ == '__main__':
 
 	METHOD = coap.GET
 	if len(argv) >= 4:
-		if argv[3] == 'get' or argv[3] == 'GET':
+		argv[3] = argv[3].upper()
+		if argv[3] == 'GET':
 			METHOD = coap.GET
-		elif argv[3] == 'post' or argv[3] == 'POST':
+		elif  argv[3] == 'POST':
 			METHOD = coap.POST
-		elif argv[3] == 'put' or argv[3] == 'PUT':
+		elif argv[3] == 'PUT':
 			METHOD = coap.PUT
-		elif argv[3] == 'delete' or argv[3] == 'DELETE':
+		elif argv[3] == 'DELETE':
 			METHOD = coap.DELETE
 		else:
 			print(f'Invalid method {argv[3]}, use GET POST PUT or DELETE')

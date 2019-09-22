@@ -48,19 +48,18 @@ class DatabaseManager:
 	_TypeMetadataNameIndex = 'type_index'
 	_Data = 'data'
 
-	def __init__(self, database: str, host: str = 'localhost', port: int = 27017, warnings: bool = True) -> None:
+	def __init__(self, database: str, uri: str = 'mongodb://localhost', warnings: bool = True) -> None:
 		"""
 		Instances and connects a DatabaseManager to a MongoDB.
 		:param database: The database name to use.
-		:param host: The optional host to connect to, defaults to `localhost`.
-		:param port: The optional port to connect to, defaults to `27017`.
+		:param uri: A connection uri used to connect to the database, same as would be used in connecting with Mongo normally.
 		:param warnings: When set to true, the Manager will throw warnings when creating datatypes or registering clients with similar
-		                          names to ones previously created, or when abnormalies happen, for example when data with a timestamp distant from
-		                          the server's is received.
+		                 names to ones previously created, or when abnormalies happen, for example when data with a timestamp distant from
+		                 the server's is received.
 		"""
 		# Setup logger #
 		# ======================= #
-		formatter = logging.Formatter(f'%(asctime)s - {database}@{host}:{port} - %(levelname)s - %(message)s')
+		formatter = logging.Formatter(f'%(asctime)s - {database} - %(levelname)s - %(message)s')
 		handler = logging.StreamHandler()
 		handler.setFormatter(formatter)
 
@@ -75,14 +74,14 @@ class DatabaseManager:
 		# Connect to database and setup data structure #
 		# ======================= #
 		
-		self._client = pymongo.MongoClient(host, port)
+		self._client = pymongo.MongoClient(uri)
 		try:
 			# The ismaster command is cheap and does not require auth.
 			self._client.admin.command('ismaster')
 		except ConnectionFailure:
-			database_logger.critical(f'Database connection to {host}:{port} failed', flush=True)
+			database_logger.critical(f'Database connection to {uri} failed', flush=True)
 			raise
-		database_logger.info(f'Connected to database {database} on {host}:{port}')
+		database_logger.info(f'Connected to database {database}')
 
 		self._database = self._client[database]
 
@@ -224,8 +223,8 @@ class DatabaseManager:
 		             "t" or "time": A timestamp of when the data was collected. Can be an actual `int` timestamp, as the number of seconds since
 		                            1970-01-01 UTC, an ISO date formatted string or a Python `datetime` object.
 		:return: The ObjectID of the inserted data.
+		
 		"""
-		# TODO: Extra logging
 		# ======================= #
 		# Check client #
 		client_info = None
@@ -235,6 +234,7 @@ class DatabaseManager:
 			client_info = self._client_registry.find_one({'_id': client})
 		
 		if not client_info:
+			database_logger.info(f'Received data insert request for non registered client {client}')
 			raise InvalidClient('Specified client has not been registered')
 		# ======================= #
 		
@@ -242,19 +242,23 @@ class DatabaseManager:
 		# Get values from dict #
 		data_name = data.get('n') or data.get('name')
 		if not data_name:
+			database_logger.info('Received data insert with missing data name')
 			raise InvalidData('Data name "n" or "name" not specified')
 		
 		data_value = data.get('v') or data.get('value')
 		if not data_value:
+			database_logger.info('Received data insert with missing data value')
 			raise InvalidData('Data value "v" or "value" not specified')
 		
 		data_timestamp = data.get('t') or data.get('time')
 		if not data_timestamp:
+			database_logger.info('Received data insert with missing data time')
 			raise InvalidData('Data timestamp "t" or "time" not specified')
 		
 		try:
 			data_datetime = self._parse_timestamp(data_timestamp)
 		except InvalidData:
+			database_logger.info('Received data insert with invalid time')
 			raise
 		# ======================= #
 		
@@ -262,17 +266,20 @@ class DatabaseManager:
 		# Verify the received data #
 		datatype_info = self._type_metadata.find_one({'name': data_name})
 		if not datatype_info:
+			database_logger.info('Received data insert with invalid data name')
 			raise InvalidData('Data name does not correspond to any registered data type')
 		
 		try:
 			value_type = StorageType.type_enum(type(data_value))
 			if value_type.value != datatype_info['storage_type']:
+				database_logger.info('Received data insert with incorrect value type')
 				raise InvalidData('Value type is different from the registered data type')
 			
 			if value_type is not StorageType.ARRAY:
 				if value_type is not StorageType.STR and datatype_info['valid_bounds'] is not None:
 					if (datatype_info['valid_bounds'][0] is not None and data_value < datatype_info['valid_bounds'][0]) or \
 					   (datatype_info['valid_bounds'][1] is not None and data_value > datatype_info['valid_bounds'][1]):
+						database_logger.info('Received data insert with value outside the allowed bounds')
 						raise InvalidData('Value is outside the valid bounds')
 					###########################
 					# TODO: Implement Alerts
@@ -282,26 +289,31 @@ class DatabaseManager:
 				for v in data_value:
 					v_type = StorageType.type_enum(type(v))
 					if v_type.value != datatype_info['array_type']:
+						database_logger.info('Received data insert with incorrect value type')
 						raise InvalidData('Value type in list is different from the registered array type')
-					if v_type is not StorageType.STR:
-						if v < datatype_info['valid_bounds'][0] or v > datatype_info['valid_bounds'][1]:
+					if v_type is not StorageType.STR and datatype_info['valid_bounds'] is not None:
+						if (datatype_info['valid_bounds'][0] is not None and data_value < datatype_info['valid_bounds'][0]) or \
+						   (datatype_info['valid_bounds'][1] is not None and data_value > datatype_info['valid_bounds'][1]):
+							database_logger.info('Received data insert with value outside the allowed bounds')
 							raise InvalidData('Value in list is outside the valid bounds')
 					###########################
 					# TODO: Implement Alerts
 					###########################
 					
 		except KeyError:
+			database_logger.info('Received data insert with incorrect value type')
 			raise InvalidData('Value type is not a valid type, expected number, str or list')
 		
 		if self.warnings:
 			time_diff = (data_datetime - datetime.utcnow()).total_seconds()
 			if time_diff >= 900:  # 15 minutes, make it configurable later?
-				database_logger.warning(f'Data received from {client_info["name"]} has timestamp ahead of the server by {time_diff} seconds, '
+				database_logger.warning(f'Data received from {client_info["name"]} has timestamp ahead of the server by {int(time_diff)} seconds, '
 				                        f'either server or client is desynced')
 			elif time_diff <= 86400:  # 1 day, make it configurable later?
-				database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {-time_diff} seconds, '
+				database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {int(-time_diff)} seconds, '
 				                        f'either client is desynced or it was disconnected for a long time')
-			
+		
+		database_logger.info(f'Received successful data insert for client {client_info["name"]}')
 		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
@@ -313,7 +325,6 @@ class DatabaseManager:
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
 		:return: A dict with all the data.
 		"""
-		# TODO: Extra logging
 		# ======================= #
 		# Check client #
 		client_info = None
@@ -323,6 +334,7 @@ class DatabaseManager:
 			client_info = self._client_registry.find_one({'_id': client})
 		
 		if not client_info:
+			database_logger.info(f'Received client data query request for non registered client {client}')
 			raise InvalidClient('Specified client has not been registered')
 		client_filter = client_info['name']
 			
@@ -336,6 +348,7 @@ class DatabaseManager:
 				datatype_info = self._type_metadata.find_one({'_id': datatype})
 			
 			if not datatype_info:
+				database_logger.info(f'Received client data query request for non registered datatype {datatype}')
 				raise InvalidData('Specified datatype has not been registered')
 			datatype_filter = str(datatype_info['name'])
 		else:
@@ -352,6 +365,7 @@ class DatabaseManager:
 			# Convert the returns to a list and add it to the dict
 			all_data[datatype] = list(self._database[coll].find(date_filter))
 		
+		database_logger.info(f'Received successful client data query for client {client}')
 		return all_data
 
 	def query_data_type(self, datatype: Union[str, ObjectId], date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
@@ -361,7 +375,6 @@ class DatabaseManager:
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
 		:return: A dict with all the data.
 		"""
-		# TODO: Extra logging
 		# ======================= #
 		# Check datatype #
 		datatype_info = None
@@ -371,6 +384,7 @@ class DatabaseManager:
 			datatype_info = self._type_metadata.find_one({'_id': datatype})
 		
 		if not datatype_info:
+			database_logger.info(f'Received client data query request for non registered datatype {datatype}')
 			raise InvalidData('Specified datatype has not been registered')
 		datatype_filter = str(datatype_info['name'])
 		# ======================= #
@@ -385,6 +399,7 @@ class DatabaseManager:
 			# Convert the returns to a list and add it to the dict
 			all_data[client] = list(self._database[coll].find(date_filter))
 		
+		database_logger.info(f'Received successful datatype data query for datatype {datatype}')
 		return all_data
 	
 	def query_all(self, date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
@@ -393,7 +408,6 @@ class DatabaseManager:
 		:param date_range: An optional tuple that specifies the beginning and end dates for querying.
 		:return: A dict with all the data.
 		"""
-		# TODO: Extra logging
 		date_filter = self._setup_date_filter(date_range)
 		all_data = {}
 		
@@ -412,7 +426,8 @@ class DatabaseManager:
 			
 			# Convert the returns to a list and add it to the dict
 			all_data[client][datatype] = list(self._database[coll].find(date_filter))
-			
+		
+		database_logger.info('Received successful generic data query')
 		return all_data
 	
 	def query_datatypes(self) -> list:
@@ -420,7 +435,7 @@ class DatabaseManager:
 		Queries all the registered datatypes in the database.
 		:return: A list of datatypes on the database.
 		"""
-		# TODO: Extra logging
+		database_logger.info('Received query for datatypes')
 		# TODO: Add some filters?
 		return list(self._type_metadata.find())
 	
@@ -429,6 +444,7 @@ class DatabaseManager:
 		Queries all the registered clients in the database.
 		:return: A list of clients on the database.
 		"""
+		database_logger.info('Received query for clients')
 		# TODO: Extra logging
 		return list(self._client_registry.find())
 	
