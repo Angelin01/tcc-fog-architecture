@@ -227,47 +227,17 @@ class DatabaseManager:
 		"""
 		# ======================= #
 		# Check client #
-		client_info = None
-		if isinstance(client, str):
-			client_info = self._client_registry.find_one({'name': client})
-		elif isinstance(client, ObjectId):
-			client_info = self._client_registry.find_one({'_id': client})
-		
-		if not client_info:
-			database_logger.info(f'Received data insert request for non registered client {client}')
-			raise InvalidClient('Specified client has not been registered')
+		client_info = self._verify_client(client)
 		# ======================= #
 		
 		# ======================= #
 		# Get values from dict #
-		data_name = data.get('n') or data.get('name')
-		if not data_name:
-			database_logger.info('Received data insert with missing data name')
-			raise InvalidData('Data name "n" or "name" not specified')
-		
-		data_value = data.get('v') or data.get('value')
-		if not data_value:
-			database_logger.info('Received data insert with missing data value')
-			raise InvalidData('Data value "v" or "value" not specified')
-		
-		data_timestamp = data.get('t') or data.get('time')
-		if not data_timestamp:
-			database_logger.info('Received data insert with missing data time')
-			raise InvalidData('Data timestamp "t" or "time" not specified')
-		
-		try:
-			data_datetime = self._parse_timestamp(data_timestamp)
-		except InvalidData:
-			database_logger.info('Received data insert with invalid time')
-			raise
+		data_name, data_value, data_datetime = self._verify_data(data)
 		# ======================= #
 		
 		# ======================= #
 		# Verify the received data #
-		datatype_info = self._type_metadata.find_one({'name': data_name})
-		if not datatype_info:
-			database_logger.info('Received data insert with invalid data name')
-			raise InvalidData('Data name does not correspond to any registered data type')
+		datatype_info = self._verify_datatype(data_name)
 		
 		try:
 			value_type = StorageType.type_enum(type(data_value))
@@ -327,29 +297,13 @@ class DatabaseManager:
 		"""
 		# ======================= #
 		# Check client #
-		client_info = None
-		if isinstance(client, str):
-			client_info = self._client_registry.find_one({'name': client})
-		elif isinstance(client, ObjectId):
-			client_info = self._client_registry.find_one({'_id': client})
-		
-		if not client_info:
-			database_logger.info(f'Received client data query request for non registered client {client}')
-			raise InvalidClient('Specified client has not been registered')
+		client_info = self._verify_client(client)
 		client_filter = client_info['name']
 			
 		# ======================= #
 		# Check datatype #
 		if datatype:
-			datatype_info = None
-			if isinstance(datatype, str):
-				datatype_info = self._type_metadata.find_one({'name': datatype})
-			elif isinstance(datatype, ObjectId):
-				datatype_info = self._type_metadata.find_one({'_id': datatype})
-			
-			if not datatype_info:
-				database_logger.info(f'Received client data query request for non registered datatype {datatype}')
-				raise InvalidData('Specified datatype has not been registered')
+			datatype_info = self._verify_datatype(datatype)
 			datatype_filter = str(datatype_info['name'])
 		else:
 			datatype_filter = '.*'
@@ -377,15 +331,7 @@ class DatabaseManager:
 		"""
 		# ======================= #
 		# Check datatype #
-		datatype_info = None
-		if isinstance(datatype, str):
-			datatype_info = self._type_metadata.find_one({'name': datatype})
-		elif isinstance(datatype, ObjectId):
-			datatype_info = self._type_metadata.find_one({'_id': datatype})
-		
-		if not datatype_info:
-			database_logger.info(f'Received client data query request for non registered datatype {datatype}')
-			raise InvalidData('Specified datatype has not been registered')
+		datatype_info = self._verify_datatype(datatype)
 		datatype_filter = str(datatype_info['name'])
 		# ======================= #
 		date_filter = self._setup_date_filter(date_range)
@@ -453,6 +399,56 @@ class DatabaseManager:
 		Closes the connection to the database. If the database is used again, it will be automatically re-opened.
 		"""
 		self._client.close()
+	
+	def _verify_client(self, client: Union[str, ObjectId]) -> dict:
+		client_info = None
+		if isinstance(client, str):
+			client_info = self._client_registry.find_one({'name': client})
+		elif isinstance(client, ObjectId):
+			client_info = self._client_registry.find_one({'_id': client})
+		
+		if client_info is None:
+			database_logger.info(f'Received data insert request for non registered client {client}')
+			raise InvalidClient('Specified client has not been registered')
+		
+		return client_info
+	
+	def _verify_data(self, data: dict) -> Tuple[str, str, datetime]:
+		data_name = data.get('n') or data.get('name')
+		if not data_name:
+			database_logger.info('Received data insert with missing data name')
+			raise InvalidData('Data name "n" or "name" not specified')
+		
+		data_value = data.get('v') or data.get('value')
+		if not data_value:
+			database_logger.info('Received data insert with missing data value')
+			raise InvalidData('Data value "v" or "value" not specified')
+		
+		data_timestamp = data.get('t') or data.get('time')
+		if not data_timestamp:
+			database_logger.info('Received data insert with missing data time')
+			raise InvalidData('Data timestamp "t" or "time" not specified')
+		
+		try:
+			data_datetime = self._parse_timestamp(data_timestamp)
+		except InvalidData:
+			database_logger.info('Received data insert with invalid time')
+			raise
+		
+		return data_name, data_value, data_datetime
+	
+	def _verify_datatype(self, datatype: Union[str, ObjectId]) -> dict:
+		datatype_info = None
+		if isinstance(datatype, str):
+			datatype_info = self._type_metadata.find_one({'name': datatype})
+		elif isinstance(datatype, ObjectId):
+			datatype_info = self._type_metadata.find_one({'_id': datatype})
+		
+		if not datatype_info:
+			database_logger.info(f'Received client data query request for non registered datatype {datatype}')
+			raise InvalidData('Specified datatype has not been registered')
+	
+		return datatype_info
 	
 	@staticmethod
 	def _setup_date_filter(date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]]) -> dict:
