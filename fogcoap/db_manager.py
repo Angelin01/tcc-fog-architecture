@@ -298,21 +298,27 @@ class DatabaseManager:
 			database_logger.info('Received data insert with incorrect value type')
 			raise InvalidData('Value type is different from the registered data type')
 		
+		alert = {'n': data_name, 't': int(data_datetime.timestamp())}
+		
 		if value_type is StorageType.NUMBER:
 			if datatype_info['alert_thresholds'][0] is not None and data_value < datatype_info['alert_thresholds'][0]:
-				return {'v': data_value,
-				        'av': datatype_info['alert_thresholds'][0],
-						'dt': int(data_datetime.timestamp()),
-				        't': (datetime.utcnow().timestamp())}
+				alert['a'] = f'{data_value} < {datatype_info["alert_thresholds"][0]}'
+				return alert
 			
 			if datatype_info['alert_thresholds'][1] is not None and data_value > datatype_info['alert_thresholds'][1]:
-				return {'v': data_value,
-				        'av': datatype_info['alert_thresholds'][1],
-				        'dt': int(data_datetime.timestamp()),
-				        't': (datetime.utcnow().timestamp())}
+				alert['a'] = f'{data_value} > {datatype_info["alert_thresholds"][1]}'
+				return alert
 			
 		elif value_type is StorageType.ARRAY:
-			pass
+			alert['a'] = []
+			for v in data_value:
+				if datatype_info['alert_thresholds'][0] is not None and v < datatype_info['alert_thresholds'][0]:
+					alert['a'].append(f'{data_value} < {datatype_info["alert_thresholds"][0]}')
+				
+				elif datatype_info['alert_thresholds'][1] is not None and v > datatype_info['alert_thresholds'][1]:
+					alert['a'].append(f'{data_value} > {datatype_info["alert_thresholds"][1]}')
+				
+			return alert if len(alert['a']) > 0 else None
 		
 		return None
 
