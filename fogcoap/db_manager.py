@@ -97,16 +97,16 @@ class DatabaseManager:
 		
 		self.warnings = warnings
 
-	def register_client(self, client: str, ecc_publc_key: bytes) -> ObjectId:
+	def register_client(self, client: str, ecc_public_key: bytes) -> ObjectId:
 		"""
 		Registers a client on the database.
 		:param client: The client's name.
-		:param ecc_publc_key: A ECC PEM encoded public key.
+		:param ecc_public_key: A ECC PEM encoded public key.
 		:return: The ObjectId for the client in the database.
 		"""
 		
 		# Checks for errors on the public key, will be used for nothing else
-		serialization.load_pem_public_key(ecc_publc_key, default_backend())
+		serialization.load_pem_public_key(ecc_public_key, default_backend())
 		
 		# ======================= #
 		# Check for similarities if needed #
@@ -119,7 +119,7 @@ class DatabaseManager:
 		# ======================= #
 		# Actual insert
 		try:
-			obj_id = self._client_registry.insert_one({'name': client, 'ecc_public_key': ecc_publc_key}).inserted_id
+			obj_id = self._client_registry.insert_one({'name': client, 'ecc_public_key': ecc_public_key}).inserted_id
 		except DuplicateKeyError:
 			database_logger.error(f'Failed to add client {client} as it\'s a duplicate')
 			raise
