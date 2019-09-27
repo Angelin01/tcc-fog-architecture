@@ -286,6 +286,36 @@ class DatabaseManager:
 		database_logger.info(f'Received successful data insert for client {client_info["name"]}')
 		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
+	def verify_alert(self, data: dict) -> Union[dict, None]:
+		data_name, data_value, data_datetime = self._verify_data(data)
+		datatype_info = self._verify_datatype(data_name)
+		
+		if datatype_info['alert_thresholds'] is None:
+			return None
+		
+		value_type = StorageType.type_enum(type(data_value))
+		if value_type.value != datatype_info['storage_type']:
+			database_logger.info('Received data insert with incorrect value type')
+			raise InvalidData('Value type is different from the registered data type')
+		
+		if value_type is StorageType.NUMBER:
+			if datatype_info['alert_thresholds'][0] is not None and data_value < datatype_info['alert_thresholds'][0]:
+				return {'v': data_value,
+				        'av': datatype_info['alert_thresholds'][0],
+						'dt': int(data_datetime.timestamp()),
+				        't': (datetime.utcnow().timestamp())}
+			
+			if datatype_info['alert_thresholds'][1] is not None and data_value > datatype_info['alert_thresholds'][1]:
+				return {'v': data_value,
+				        'av': datatype_info['alert_thresholds'][1],
+				        'dt': int(data_datetime.timestamp()),
+				        't': (datetime.utcnow().timestamp())}
+			
+		elif value_type is StorageType.ARRAY:
+			pass
+		
+		return None
+
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
 		"""
