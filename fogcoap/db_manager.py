@@ -287,6 +287,17 @@ class DatabaseManager:
 		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
 	def verify_alert(self, data: dict) -> Union[dict, None]:
+		"""
+		Verifies the client supplied data for alerts.
+		:param data: A dictionary containing the data. Should contain 3 keys:
+		             "n" or "name": the name of the registered datatype.
+		             "v" or "value": the actual value of the data. Must match the unit type specified when registering the data.
+		             "t" or "time": A timestamp of when the data was collected. Can be an actual `int` timestamp, as the number of seconds since
+		                            1970-01-01 UTC, an ISO date formatted string or a Python `datetime` object.
+		:return: Returns `None` if no alerts were found, otherwise returns a dict with three keys: "n" and "t", the same as supplied in the client
+		         data, and the key "a" (for alert) which contains a *description string* of the alert similar to `value < min_threshold` or
+		         `value > max_threshold`.
+		"""
 		data_name, data_value, data_datetime = self._verify_data(data)
 		datatype_info = self._verify_datatype(data_name)
 		
