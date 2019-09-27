@@ -17,11 +17,14 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 	print(f'Sending request to {uri} with method {method} and payload "{compressed_payload}"')
 	
 	try:
-		response = await protocol.request(request).response
+		pr = await protocol.request(request)
 	except Exception as e:
 		print('Failed to fetch resource:')
 		print(e)
 		exit(1)
+	
+	response = await pr.response
+	print('First response')
 	try:
 		print(f'Response code: {response.code}\n'
 		      f'Payload: {decompress(response.payload)}')
@@ -29,10 +32,19 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 		print(f'Response code: {response.code}\n'
 		      f'Raw Payload: {response.payload}')
 	
-	while True:
-		async for r in response.observation:
-			print(f'Next: {r.payload}')
+	async for r in pr.observation:
+		print('')
+		try:
+			try:
+				print(f'Next Response code: {r.code}\n'
+				      f'Payload: {decompress(r.payload)}')
+			except OSError:
+				print(f'Next Response code: {r.code}\n'
+				      f'Raw Payload: {r.payload}')
 			await asyncio.sleep(1)
+		except KeyboardInterrupt:
+			print('Exiting')
+			pr.observation.cancel()
 			
 
 if __name__ == '__main__':
