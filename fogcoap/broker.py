@@ -1,7 +1,8 @@
 import asyncio
 from signal import SIGINT, SIGTERM
 from aiocoap import Context
-from aiocoap.resource import Site, WKCResource
+from typing import Union
+from aiocoap.resource import Site, WKCResource, Resource, ObservableResource
 from fogcoap.db_manager import DatabaseManager
 from fogcoap.resources import ClientResource, DatatypeResource, ListClientsResource, ListDatatypesResource, AllData
 from fogcoap.alerts import ClientAlert
@@ -15,30 +16,35 @@ class Broker:
 		self._loop = None
 		self._root = Site()
 	
+	def add_topic(self, path: tuple, instance: Union[Resource, ObservableResource]):
+		"""
+		Adds a topic to the broker.
+		Should be called before starting the broker.
+		:param path: A tuple separated path to the topic. For example, `('some', 'path')` will turn into `coap://yourdomain/some/path`.
+		:param instance: An instance of aiocoap's resources or something that inherits from it.
+		"""
+		self._root.add_resource(path, instance)
+	
 	def _setup_resources(self):
-		self._root.add_resource(('.well-known', 'core'),
-		                        WKCResource(self._root.get_resources_as_linkheader))
-		self._root.add_resource(('alldata',),
-		                        AllData(self._db_manager))
+		self.add_topic(('.well-known', 'core'), WKCResource(self._root.get_resources_as_linkheader))
+		self.add_topic(('alldata',), AllData(self._db_manager))
+		
 		self._setup_clients()
 		self._setup_datatypes()
 		
 	def _setup_clients(self):
-		self._root.add_resource(('listclients',),
-		                        ListClientsResource(self._db_manager))
+		self.add_topic(('listclients',), ListClientsResource(self._db_manager))
+		
 		for client in self._db_manager.query_clients():
 			alert_resource = ClientAlert()
-			self._root.add_resource(('alert', client['name']),
-			                        alert_resource)
-			self._root.add_resource(('client', client['name']),
-			                        ClientResource(client['name'], client['ecc_public_key'], self._db_manager, alert_resource))
-			
+			self.add_topic(('alert', client['name']), alert_resource)
+			self.add_topic(('client', client['name']),  ClientResource(client['name'], client['ecc_public_key'], self._db_manager, alert_resource))
 		
 	def _setup_datatypes(self):
-		self._root.add_resource(('listdatatypes',),
+		self.add_topic(('listdatatypes',),
 		                        ListDatatypesResource(self._db_manager))
 		for datatype in self._db_manager.query_datatypes():
-			self._root.add_resource(('datatype', datatype['name']),
+			self.add_topic(('datatype', datatype['name']),
 			                        DatatypeResource(datatype['name'], self._db_manager))
 	
 	def run(self):
