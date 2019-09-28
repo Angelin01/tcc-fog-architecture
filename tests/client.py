@@ -79,7 +79,7 @@ if __name__ == '__main__':
 		except ValueError:
 			try:
 				with open(argv[4]) as json_file:
-					PAYLOAD = json_file.read()
+					PAYLOAD = json.load(json_file)
 			except FileNotFoundError:
 				print(f'{argv[4]} is not a valid JSON string or JSON file')
 				exit(1)
