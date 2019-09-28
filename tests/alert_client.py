@@ -17,7 +17,7 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 	print(f'Sending request to {uri} with method {method} and payload "{compressed_payload}"')
 	
 	try:
-		pr = await protocol.request(request)
+		pr = protocol.request(request)
 	except Exception as e:
 		print('Failed to fetch resource:')
 		print(e)
