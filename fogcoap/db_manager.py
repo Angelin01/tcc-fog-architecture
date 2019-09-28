@@ -275,7 +275,7 @@ class DatabaseManager:
 			raise InvalidData('Value type is not a valid type, expected number, str or list')
 		
 		if self.warnings:
-			time_diff = (data_datetime - datetime.utcnow()).total_seconds()
+			time_diff = (data_datetime - datetime(1970, 1, 1)).total_seconds()
 			if time_diff >= 900:  # 15 minutes, make it configurable later?
 				database_logger.warning(f'Data received from {client_info["name"]} has timestamp ahead of the server by {int(time_diff)} seconds, '
 				                        f'either server or client is desynced')
