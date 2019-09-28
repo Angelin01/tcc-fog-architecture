@@ -274,14 +274,14 @@ class DatabaseManager:
 			database_logger.info('Received data insert with incorrect value type')
 			raise InvalidData('Value type is not a valid type, expected number, str or list')
 		
-		if self.warnings:
-			time_diff = data_datetime.timestamp() - (datetime.utcnow() - datetime(1970, 1, 1)).total_seconds()
-			if time_diff >= 900:  # 15 minutes, make it configurable later?
-				database_logger.warning(f'Data received from {client_info["name"]} has timestamp ahead of the server by {int(time_diff)} seconds, '
-				                        f'either server or client is desynced')
-			elif time_diff <= 86400:  # 1 day, make it configurable later?
-				database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {int(-time_diff)} seconds, '
-				                        f'either client is desynced or it was disconnected for a long time')
+		# if self.warnings:
+		# 	time_diff = data_datetime.timestamp() - (datetime.utcnow() - datetime(1970, 1, 1)).total_seconds()
+		# 	if time_diff >= 900:  # 15 minutes, make it configurable later?
+		# 		database_logger.warning(f'Data received from {client_info["name"]} has timestamp ahead of the server by {int(time_diff)} seconds, '
+		# 		                        f'either server or client is desynced')
+		# 	elif time_diff <= 86400:  # 1 day, make it configurable later?
+		# 		database_logger.warning(f'Data received from {client_info["name"]} has timestamp behind of the server by {int(-time_diff)} seconds, '
+		# 		                        f'either client is desynced or it was disconnected for a long time')
 		
 		database_logger.info(f'Received successful data insert for client {client_info["name"]}')
 		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
