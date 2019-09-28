@@ -10,7 +10,11 @@ class ClientAlert(ObservableResource):
 		
 		self._last_alert = b''
 		
-	def notify(self, alert: dict):
+	def notify(self, alert):
+		"""
+		Called when you want to notify any subscribed clients of an alert.
+		:param alert: The JSON dumpable alert, probably generated from the database manager.
+		"""
 		self._last_alert = gzcompress(json.dumps(alert, separators=(',', ':'), ensure_ascii=True).encode('ascii'))
 		self.updated_state()
 	

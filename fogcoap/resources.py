@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.exceptions import InvalidSignature
 from fogcoap import DatabaseManager, InvalidData
+from fogcoap.alerts import ClientAlert
 
 
 def _gzip_payload(func):
@@ -138,12 +139,13 @@ class ClientResource(BaseResource):
 	Representation of a client, for receiving the data sent from the client and for querying the stored data.
 	"""
 	
-	def __init__(self, name: str, ecc_public_key: bytes, db_manager: DatabaseManager):
+	def __init__(self, name: str, ecc_public_key: bytes, db_manager: DatabaseManager, alert_resource: ClientAlert = None):
 		"""
 		Simple class for a client.
 		:param name: The client's registered name.
 		:param ecc_public_key: The client's public ECC PEM encoded key.
 		:param db_manager: An instance of the database manager.
+		:param alert_resource: The client's alert instance, so it can be told to notify subscribed clients.
 		"""
 		self._name = name
 		self._ecc_pub_key = serialization.load_pem_public_key(ecc_public_key, default_backend())
