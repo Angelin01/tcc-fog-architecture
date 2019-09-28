@@ -27,10 +27,12 @@ class Broker:
 		self._root.add_resource(('listclients',),
 		                        ListClientsResource(self._db_manager))
 		for client in self._db_manager.query_clients():
-			self._root.add_resource(('client', client['name']),
-			                        ClientResource(client['name'], client['ecc_public_key'], self._db_manager))
+			alert_resource = ClientAlert()
 			self._root.add_resource(('alert', client['name']),
-			                        ClientAlert())
+			                        alert_resource)
+			self._root.add_resource(('client', client['name']),
+			                        ClientResource(client['name'], client['ecc_public_key'], self._db_manager, alert_resource))
+			
 		
 	def _setup_datatypes(self):
 		self._root.add_resource(('listdatatypes',),
