@@ -150,6 +150,7 @@ class ClientResource(BaseResource):
 		self._name = name
 		self._ecc_pub_key = serialization.load_pem_public_key(ecc_public_key, default_backend())
 		self._last_rcv_timestamp = 0
+		self._alert_resource = alert_resource
 		super().__init__(db_manager)
 
 	@_gzip_payload
@@ -251,6 +252,8 @@ class ClientResource(BaseResource):
 		If the entire json could not be loaded a BAD_REQUEST will be returned with a simple json object payload `{"error", "Bad JSON format"}`.
 		Similarly, if the loaded object is not a list, the error shall be `"JSON top object not an array"`.
 		The response payload will be gzip compressed.
+		
+		
 		"""
 		# Load the json data
 		try:
@@ -264,6 +267,9 @@ class ClientResource(BaseResource):
 		one_successful = False
 		insert_status = []
 		
+		if self._alert_resource is not None:
+			alerts = []
+		
 		# Insert values
 		for data in data_list:
 			if not isinstance(data, dict):
@@ -272,6 +278,10 @@ class ClientResource(BaseResource):
 				
 			try:
 				obj_id = self._db_manager.insert_data(self._name, data)
+				if self._alert_resource is not None:
+					alert = self._db_manager.verify_alert(data)
+					if alert is not None:
+						alerts.append(alert)
 			except InvalidData as e:
 				insert_status.append({'error': str(e)})
 			
@@ -286,6 +296,9 @@ class ClientResource(BaseResource):
 				
 		if one_successful:
 			self._last_rcv_timestamp = int(datetime.utcnow().timestamp())
+			
+		if self._alert_resource is not None and len(alerts) > 0:
+			self._alert_resource.notify(alerts)
 		
 		return self._build_msg(code=Code.CHANGED if one_successful else Code.BAD_REQUEST,
 		                       data=insert_status)
