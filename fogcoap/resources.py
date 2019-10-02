@@ -295,7 +295,7 @@ class ClientResource(BaseResource):
 				one_successful = True
 				
 		if one_successful:
-			self._last_rcv_timestamp = int(datetime.utcnow().timestamp())
+			self._last_rcv_timestamp = int(datetime.now().timestamp())
 			
 		if self._alert_resource is not None and len(alerts) > 0:
 			self._alert_resource.notify(alerts)
