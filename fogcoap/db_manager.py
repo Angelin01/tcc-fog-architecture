@@ -253,6 +253,10 @@ class DatabaseManager:
 						raise InvalidData('Value is outside the valid bounds')
 				
 			else:
+				if len(data_value) == 0:
+					database_logger.info('Received array data insert with empty list')
+					raise InvalidData('Array of values is empty')
+				
 				for v in data_value:
 					v_type = StorageType.type_enum(type(v))
 					if v_type.value != datatype_info['array_type']:
