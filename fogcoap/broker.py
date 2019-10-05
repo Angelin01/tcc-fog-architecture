@@ -33,7 +33,7 @@ class Broker:
 		self._setup_datatypes()
 		
 	def _setup_clients(self):
-		self.add_topic(('listclients',), ListClientsResource(self._db_manager))
+		self.add_topic(('list', 'clients'), ListClientsResource(self._db_manager))
 		
 		for client in self._db_manager.query_clients():
 			alert_resource = ClientAlert()
@@ -41,7 +41,7 @@ class Broker:
 			self.add_topic(('client', client['name']),  ClientResource(client['name'], client['ecc_public_key'], self._db_manager, alert_resource))
 		
 	def _setup_datatypes(self):
-		self.add_topic(('listdatatypes',),  ListDatatypesResource(self._db_manager))
+		self.add_topic(('list', 'datatypes'),  ListDatatypesResource(self._db_manager))
 		
 		for datatype in self._db_manager.query_datatypes():
 			self.add_topic(('datatype', datatype['name']), DatatypeResource(datatype['name'], self._db_manager))

@@ -251,9 +251,6 @@ class DatabaseManager:
 					   (datatype_info['valid_bounds'][1] is not None and data_value > datatype_info['valid_bounds'][1]):
 						database_logger.info('Received data insert with value outside the allowed bounds')
 						raise InvalidData('Value is outside the valid bounds')
-					###########################
-					# TODO: Implement Alerts
-					###########################
 				
 			else:
 				for v in data_value:
@@ -266,9 +263,6 @@ class DatabaseManager:
 						   (datatype_info['valid_bounds'][1] is not None and data_value > datatype_info['valid_bounds'][1]):
 							database_logger.info('Received data insert with value outside the allowed bounds')
 							raise InvalidData('Value in list is outside the valid bounds')
-					###########################
-					# TODO: Implement Alerts
-					###########################
 					
 		except KeyError:
 			database_logger.info('Received data insert with incorrect value type')
