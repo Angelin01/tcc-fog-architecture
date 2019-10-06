@@ -293,7 +293,7 @@ class DatabaseManager:
 		database_logger.info(f'Received successful data insert for client {client_info["name"]}')
 		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
-	def verify_alert(self, data: dict) -> Union[dict, None]:
+	def verify_alert(self, data: dict, client: Union[str, ObjectId]) -> Union[dict, None]:
 		"""
 		Verifies the client supplied data for alerts.
 		:param data: A dictionary containing the data. Should contain 3 keys:
@@ -353,6 +353,7 @@ class DatabaseManager:
 		
 		# We can assume that past_avg_count is also not None since an AlertSpec checks for it
 		if alert_spec.avg_deviation is not None:
+			client_info = self._verify_client(client)
 			avg = 0  # TODO: Actually calculate the avg
 			alert = self._verify_alert_avg_deviation(data_value, alert_spec.avg_deviation, avg)
 			if alert is not None:
