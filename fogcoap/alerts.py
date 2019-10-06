@@ -145,6 +145,8 @@ class AlertSpec:
 		
 		if count is None:
 			raise ValueError('If avg_deviation is set, past_avg_count must also be set')
+		elif not isinstance(count, int):
+			raise ValueError('Past avg count must be a positive int')
 		elif count <= 0:
 			raise ValueError('Past avg count must be higher than 0')
 		
