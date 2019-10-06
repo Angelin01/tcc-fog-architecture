@@ -322,7 +322,7 @@ class DatabaseManager:
 			database_logger.info('Received data insert with incorrect value type')
 			raise InvalidData('Value type is different from the registered data type')
 		
-		if alert_spec is None:
+		if alert_spec is None or value_type is StorageType.STR:
 			return None
 		
 		# If it's an array of values, convert the value to be whatever it needs to be according to the spec
