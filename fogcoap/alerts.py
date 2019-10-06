@@ -45,19 +45,39 @@ class AlertSpec:
 		self.array_treatment = array_treatment
 	
 	@classmethod
-	def from_json(cls, json_obj: Union[str, bytes]):
-		pass
-	
-	@classmethod
 	def from_dict(cls, dict_obj: dict):
-		pass
-	
-	def to_json(self) -> str:
-		pass
+		array_treatment = dict_obj.get('array_treatment')
+		if array_treatment is not None:
+			array_treatment = ArrayTreatment(array_treatment)
+		
+		return cls(
+			prohibit_insert=dict_obj['prohibit_insert'],
+			abs_alert_thresholds=dict_obj.get('abs_alert_thresholds'),
+			interval_groups=dict_obj.get('interval_groups'),
+			array_treatment=array_treatment,
+			avg_deviation=dict_obj.get('avg_deviation'),
+			past_avg_count=dict_obj.get('past_avg_count')
+		)
 	
 	def to_dict(self) -> dict:
-		pass
-	
+		obj = {'prohibit_insert': self.prohibit_insert}
+		
+		if self.abs_alert_thresholds is not None:
+			obj['abs_alert_thresholds'] = self.abs_alert_thresholds
+			
+		if self.interval_groups is not None:
+			obj['interval_groups'] = self.interval_groups
+			
+		if self.array_treatment is not None:
+			obj['array_treatment'] = self.array_treatment
+			
+		if self.avg_deviation is not None and self.past_avg_count is not None:
+			obj['avg_deviation'] = self.avg_deviation
+			obj['past_avg_count'] = self.past_avg_count
+		
+		return obj
+		
+		
 	def set_abs_thresholds(self, abs_alert_thresholds: Tuple[Optional[float], Optional[float]]):
 		if len(abs_alert_thresholds) != 2:
 			raise ValueError('abs_alert_thresholds must have two values')
