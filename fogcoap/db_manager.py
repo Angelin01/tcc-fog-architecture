@@ -1,6 +1,7 @@
 import pymongo
 import re
 import logging
+from fogcoap.alerts import AlertSpec, ArrayTreatment
 from pymongo.errors import ConnectionFailure, DuplicateKeyError
 from enum import Enum
 from bson.objectid import ObjectId
@@ -135,7 +136,7 @@ class DatabaseManager:
 		return obj_id
 
 	def register_datatype(self, name: str, storage_type: StorageType, array_type: StorageType = None, unit: str = None,
-	                      valid_bounds: tuple = None, alert_thresholds: tuple = None) -> ObjectId:
+	                      valid_bounds: tuple = None, alert_spec: AlertSpec = None) -> ObjectId:
 		"""
 		Register a type of data that will be inserted into the DB.
 		Unregistered types or data that does not match the requirements will be rejected.
@@ -146,7 +147,7 @@ class DatabaseManager:
 		:param unit: Optional unit like "seconds" or "s", as a string, to save with the rest of the data.
 		:param valid_bounds: An optional tuple or list of 2 elements that dictates the minimum and maximum values, respectively,
 		of the data to be stored. Both bounds are optional, being ignored if passed as `None`.
-		:param alert_thresholds: An optional tuple or list of 2 elements for alerts. If an inserted value is outside of this range, an alert
+		:param alert_spec: An optional instance of `AlertSpec`, which specifies how (and if) alerts should be generated.
 		will be generated. Both bounds are optional, being ignored if passed as `None`.
 		:return: The ObjectId for the type in the database.
 		"""
@@ -166,19 +167,22 @@ class DatabaseManager:
 			
 			if array_type not in StorageType or array_type is StorageType.ARRAY:  # Same as above, check for enum won't be needed in 3.8
 				raise TypeError('Invalid array storage type, must be NUMBER or STR')
+			
+			if alert_spec is not None and alert_spec.array_treatment is None:
+				raise ValueError('Specified AlertSpec must have an array_treatment set for a datatype with type ARRAY')
 
 		# Verify bounds and alerts, except for strs
 		if not (storage_type is StorageType.STR or (storage_type is StorageType.ARRAY and array_type is StorageType.STR)):
 			try:
-				self._verify_bounds(valid_bounds, alert_thresholds, array_type if storage_type is StorageType.ARRAY else storage_type)
+				self._verify_bounds(valid_bounds, alert_spec, array_type if storage_type is StorageType.ARRAY else storage_type)
 			except (ValueError, TypeError) as e:
 				raise Exception(f'Invalid bounds or thresholds when registering type {name}') from e
 		else:
 			if valid_bounds is not None:
 				valid_bounds = None
 				database_logger.warning('Can\'t set bounds for STRs, they will be ignored')
-			if alert_thresholds is not None:
-				alert_thresholds = None
+			if alert_spec is not None:
+				alert_spec = None
 				database_logger.warning('Can\'t set alert thresholds for STRs, they will be ignored')
 		# ======================= #
 		
@@ -199,7 +203,7 @@ class DatabaseManager:
 				'array_type': None if array_type is None else array_type.value,
 				'unit': unit,
 				'valid_bounds': valid_bounds,
-				'alert_thresholds': alert_thresholds
+				'alert_spec': alert_spec.to_dict()
 			}).inserted_id
 		except DuplicateKeyError:
 			database_logger.error(f'Failed to add type {name} as it\'s a duplicate')
@@ -538,7 +542,7 @@ class DatabaseManager:
 		raise InvalidData('Timestamp type is invalid, expected datetime object, str or int')
 	
 	@staticmethod
-	def _verify_bounds(bounds, thresholds, expected_type):
+	def _verify_bounds(bounds: tuple, alert_spec: AlertSpec, expected_type: StorageType):
 		# Check that type isn't strings
 		if expected_type is not StorageType.NUMBER:
 			raise TypeError('Bounds and Thresholds can only be numbers')
@@ -557,29 +561,30 @@ class DatabaseManager:
 			if bounds[0] is not None and bounds[1] is not None and bounds[0] >= bounds[1]:
 				raise ValueError(f'Low bound {bounds[0]} cannot be higher than high bound {bounds[1]}')
 		
-		# Check thresholds object, types and values
-		if thresholds is not None:
-			if len(thresholds) != 2:
-				raise ValueError('Expected 2 values in thresholds')
-			
-			if not (StorageType.is_instance(thresholds[0], expected_type) or thresholds[0] is None) or \
-			   not (StorageType.is_instance(thresholds[1], expected_type) or thresholds[1] is None):
-				raise TypeError(f'Types for thresholds don\'t match with expected type {expected_type.__name__}')
-			
-			if thresholds[0] is not None and thresholds[1] is not None and thresholds[0] >= thresholds[1]:
-				raise ValueError(f'Low alert threshold {thresholds[0]} cannot be higher than high alert threshold {thresholds[1]}')
-		
 		# Check if thresholds are valid
-		if bounds is not None and thresholds is not None:
-			if bounds[0] is not None:
-				if thresholds[0] is not None and thresholds[0] < bounds[0] or \
-				   thresholds[1] is not None and thresholds[1] < bounds[0]:
-					raise ValueError(f'Alert thresholds can\'t be lower than low valid bound {bounds[0]}')
+		if bounds is not None and alert_spec is not None:
+			if alert_spec.abs_alert_thresholds is not None:
+				if bounds[0] is not None:
+					if alert_spec.abs_alert_thresholds[0] is not None and alert_spec.abs_alert_thresholds[0] < bounds[0] or \
+					   alert_spec.abs_alert_thresholds[1] is not None and alert_spec.abs_alert_thresholds[1] < bounds[0]:
+						raise ValueError(f'Alert thresholds can\'t be lower than low valid bound {bounds[0]}')
+				
+				if bounds[1] is not None:
+					if alert_spec.abs_alert_thresholds[0] is not None and alert_spec.abs_alert_thresholds[0] > bounds[1] or \
+					   alert_spec.abs_alert_thresholds[1] is not None and alert_spec.abs_alert_thresholds[1] > bounds[1]:
+						raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
 			
-			if bounds[1] is not None:
-				if thresholds[0] is not None and thresholds[0] > bounds[1] or \
-				   thresholds[1] is not None and thresholds[1] > bounds[1]:
-					raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
+			if alert_spec.interval_groups is not None:
+				for group in alert_spec.interval_groups:
+					if bounds[0] is not None:
+						if group[0] is not None and group[0] < bounds[0] or \
+						   group[1] is not None and group[1] < bounds[0]:
+							raise ValueError(f'Alert intervals can\'t be lower than low valid bound {bounds[0]}')
+					
+					if bounds[1] is not None:
+						if group[0] is not None and group[0] > bounds[1] or \
+						   group[1] is not None and group[1] > bounds[1]:
+							raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
 
 	@staticmethod
 	def set_logging_level(level: int) -> None:
