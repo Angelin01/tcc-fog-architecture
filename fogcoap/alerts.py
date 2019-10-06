@@ -101,7 +101,7 @@ class AlertSpec:
 			obj['interval_groups'] = self.interval_groups
 			
 		if self.array_treatment is not None:
-			obj['array_treatment'] = self.array_treatment
+			obj['array_treatment'] = self.array_treatment.value
 			
 		if self.avg_deviation is not None and self.past_avg_count is not None:
 			obj['avg_deviation'] = self.avg_deviation
