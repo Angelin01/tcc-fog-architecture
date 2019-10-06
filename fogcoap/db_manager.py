@@ -354,11 +354,16 @@ class DatabaseManager:
 		# We can assume that past_avg_count is also not None since an AlertSpec checks for it
 		if alert_spec.avg_deviation is not None:
 			client_info = self._verify_client(client)
-			avg = 0  # TODO: Actually calculate the avg
-			alert = self._verify_alert_avg_deviation(data_value, alert_spec.avg_deviation, avg)
-			if alert is not None:
-				# TODO: Actually do some stuff, don't just return it
-				return alert
+			# Only check avg if the number of documents stored is already higher than the past_avg_count necessary
+			if self._database[self._Data][client_info['name']][datatype_info['name']].count_documents() >= alert_spec.past_avg_count:
+				avg = np.mean([record['value'] for record in
+				              self._database[self._Data][client_info['name']][datatype_info['name']]
+				              .find(projection={'_id': 0, 'value': 1}).sort('_id', pymongo.DESCENDING).limit(alert_spec.past_avg_count)])
+				
+				alert = self._verify_alert_avg_deviation(data_value, alert_spec.avg_deviation, avg)
+				if alert is not None:
+					# TODO: Actually do some stuff, don't just return it
+					return alert
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
