@@ -1,6 +1,7 @@
 import pymongo
 import re
 import logging
+import numpy as np
 from fogcoap.alerts import AlertSpec, ArrayTreatment
 from pymongo.errors import ConnectionFailure, DuplicateKeyError
 from enum import Enum
@@ -305,10 +306,10 @@ class DatabaseManager:
 		         `value > max_threshold`.
 		"""
 		data_name, data_value, data_datetime = self._verify_data(data)
+		datatype_info = self._verify_datatype(data_name)
 		if data_name in self._cached_alert_specs:
 			alert_spec = self._cached_alert_specs[data_name]
 		else:
-			datatype_info = self._verify_datatype(data_name)
 			if datatype_info['alert_spec'] is not None:
 				alert_spec = AlertSpec.from_dict(datatype_info['alert_spec'])
 				self._cached_alert_specs[data_name] = alert_spec
@@ -316,41 +317,27 @@ class DatabaseManager:
 				alert_spec = None
 				self._cached_alert_specs[data_name] = None
 		
-		if alert_spec is None:
-			return None
-		
-		# ============== #
-		# TODO: NEEDS UPDATING
-		# ============== #
-		
 		value_type = StorageType.type_enum(type(data_value))
 		if value_type.value != datatype_info['storage_type']:
 			database_logger.info('Received data insert with incorrect value type')
 			raise InvalidData('Value type is different from the registered data type')
 		
-		alert = {'n': data_name, 't': int(data_datetime.timestamp())}
+		if alert_spec is None:
+			return None
 		
-		if value_type is StorageType.NUMBER:
-			if datatype_info['alert_thresholds'][0] is not None and data_value < datatype_info['alert_thresholds'][0]:
-				alert['a'] = f'{data_value} < {datatype_info["alert_thresholds"][0]}'
-				return alert
-			
-			if datatype_info['alert_thresholds'][1] is not None and data_value > datatype_info['alert_thresholds'][1]:
-				alert['a'] = f'{data_value} > {datatype_info["alert_thresholds"][1]}'
-				return alert
-			
-		elif value_type is StorageType.ARRAY:
-			alert['a'] = []
-			for v in data_value:
-				if datatype_info['alert_thresholds'][0] is not None and v < datatype_info['alert_thresholds'][0]:
-					alert['a'].append(f'{data_value} < {datatype_info["alert_thresholds"][0]}')
-				
-				elif datatype_info['alert_thresholds'][1] is not None and v > datatype_info['alert_thresholds'][1]:
-					alert['a'].append(f'{data_value} > {datatype_info["alert_thresholds"][1]}')
-				
-			return alert if len(alert['a']) > 0 else None
+		# If it's an array of values, convert the value to be whatever it needs to be according to the spec
+		if value_type == StorageType.ARRAY and alert_spec.array_treatment is not ArrayTreatment.INDIVIDUALLY:
+			if alert_spec.array_treatment is ArrayTreatment.MEAN:
+				data_value = np.mean(data_value)
+			elif alert_spec.array_treatment is ArrayTreatment.SUM:
+				data_value = np.sum(data_value)
+			elif alert_spec.array_treatment is ArrayTreatment.MAX:
+				data_value = np.max(data_value)
+			elif alert_spec.array_treatment is ArrayTreatment.MIN:
+				data_value = np.min(data_value)
+			elif alert_spec.array_treatment is ArrayTreatment.MEDIAN:
+				data_value = np.median(data_value)
 		
-		return None
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
