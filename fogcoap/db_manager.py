@@ -455,6 +455,9 @@ class DatabaseManager:
 	
 	def _verify_client(self, client: Union[str, ObjectId]) -> dict:
 		client_info = None
+		if client in self._cached_clients:
+			return self._cached_datatypes[client]
+		
 		if isinstance(client, str):
 			client_info = self._client_registry.find_one({'name': client})
 		elif isinstance(client, ObjectId):
@@ -463,6 +466,9 @@ class DatabaseManager:
 		if client_info is None:
 			database_logger.info(f'Received data insert request for non registered client {client}')
 			raise InvalidClient('Specified client has not been registered')
+		
+		self._cached_clients[client_info['name']] = client_info
+		self._cached_clients[client_info['_id']] = client_info
 		
 		return client_info
 	
