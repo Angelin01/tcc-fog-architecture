@@ -97,6 +97,10 @@ class DatabaseManager:
 		# ======================= #
 		
 		self.warnings = warnings
+		
+		self._cached_datatypes = {}
+		self._cached_clients = {}
+		self._cached_alert_specs = {}
 
 	def register_client(self, client: str, ecc_public_key: bytes) -> ObjectId:
 		"""
@@ -488,14 +492,20 @@ class DatabaseManager:
 	
 	def _verify_datatype(self, datatype: Union[str, ObjectId]) -> dict:
 		datatype_info = None
+		if datatype in self._cached_datatypes:
+			return self._cached_datatypes[datatype]
+		
 		if isinstance(datatype, str):
 			datatype_info = self._type_metadata.find_one({'name': datatype})
 		elif isinstance(datatype, ObjectId):
 			datatype_info = self._type_metadata.find_one({'_id': datatype})
 		
-		if not datatype_info:
+		if datatype_info is None:
 			database_logger.info(f'Received client data query request for non registered datatype {datatype}')
 			raise InvalidData('Specified datatype has not been registered')
+		
+		self._cached_datatypes[datatype_info['name']] = datatype_info
+		self._cached_datatypes[datatype_info['_id']] = datatype_info
 	
 		return datatype_info
 	
