@@ -305,10 +305,23 @@ class DatabaseManager:
 		         `value > max_threshold`.
 		"""
 		data_name, data_value, data_datetime = self._verify_data(data)
-		datatype_info = self._verify_datatype(data_name)
+		if data_name in self._cached_alert_specs:
+			alert_spec = self._cached_alert_specs[data_name]
+		else:
+			datatype_info = self._verify_datatype(data_name)
+			if datatype_info['alert_spec'] is not None:
+				alert_spec = AlertSpec.from_dict(datatype_info['alert_spec'])
+				self._cached_alert_specs[data_name] = alert_spec
+			else:
+				alert_spec = None
+				self._cached_alert_specs[data_name] = None
 		
-		if datatype_info['alert_thresholds'] is None:
+		if alert_spec is None:
 			return None
+		
+		# ============== #
+		# TODO: NEEDS UPDATING
+		# ============== #
 		
 		value_type = StorageType.type_enum(type(data_value))
 		if value_type.value != datatype_info['storage_type']:
