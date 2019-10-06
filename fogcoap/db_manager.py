@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, List
 
 
 database_logger = logging.Logger(__name__)
@@ -338,6 +338,26 @@ class DatabaseManager:
 			elif alert_spec.array_treatment is ArrayTreatment.MEDIAN:
 				data_value = np.median(data_value)
 		
+		if alert_spec.abs_alert_thresholds is not None:
+			alert = self._verify_alert_abs_thresholds(data_value, alert_spec.abs_alert_thresholds)
+			if alert is not None:
+				# TODO: Actually do some stuff, don't just return it
+				return alert
+		
+		if alert_spec.interval_groups is not None:
+			for interval in alert_spec.interval_groups:
+				alert = self._verify_alert_interval(data_value, interval)
+				if alert is not None:
+					# TODO: Actually do some stuff, don't just return it
+					return alert
+		
+		# We can assume that past_avg_count is also not None since an AlertSpec checks for it
+		if alert_spec.avg_deviation is not None:
+			avg = 0  # TODO: Actually calculate the avg
+			alert = self._verify_alert_avg_deviation(data_value, alert_spec.avg_deviation, avg)
+			if alert is not None:
+				# TODO: Actually do some stuff, don't just return it
+				return alert
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
@@ -601,6 +621,18 @@ class DatabaseManager:
 						if group[0] is not None and group[0] > bounds[1] or \
 						   group[1] is not None and group[1] > bounds[1]:
 							raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
+
+	@staticmethod
+	def _verify_alert_abs_thresholds(data_value, abs_thresholds):
+		pass
+	
+	@staticmethod
+	def _verify_alert_interval(data_value, interval):
+		pass
+	
+	@staticmethod
+	def _verify_alert_avg_deviation(data_value, avg_limits, avg):
+		pass
 
 	@staticmethod
 	def set_logging_level(level: int) -> None:
