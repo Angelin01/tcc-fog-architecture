@@ -630,7 +630,22 @@ class DatabaseManager:
 
 	@staticmethod
 	def _verify_alert_abs_thresholds(data_value, abs_thresholds):
-		pass
+		if hasattr(data_value, '__iter__'):
+			alerts = []
+			for value in data_value:
+				if abs_thresholds[0] is not None and value < abs_thresholds[0]:
+					alerts.append(f'{value} < {abs_thresholds[0]}')
+				elif abs_thresholds[1] is not None and value > abs_thresholds[1]:
+					alerts.append(f'{value} > {abs_thresholds[1]}')
+			return alerts if len(alerts) > 0 else None
+			
+		else:
+			if abs_thresholds[0] is not None and data_value < abs_thresholds[0]:
+				return f'{data_value} < {abs_thresholds[0]}'
+			elif abs_thresholds[1] is not None and data_value > abs_thresholds[1]:
+				return f'{data_value} > {abs_thresholds[1]}'
+		
+		return None
 	
 	@staticmethod
 	def _verify_alert_interval(data_value, interval):
