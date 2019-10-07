@@ -649,7 +649,18 @@ class DatabaseManager:
 	
 	@staticmethod
 	def _verify_alert_interval(data_value, interval):
-		pass
+		if hasattr(data_value, '__iter__'):
+			alerts = []
+			for value in data_value:
+				if interval[0] < value < interval[1]:
+					alerts.append(f'{interval[0]} < {value} < {interval[1]}')
+			return alerts if len(alerts) > 0 else None
+		
+		else:
+			if interval[0] < data_value < interval[1]:
+				return f'{interval[0]} < {data_value} < {interval[1]}'
+		
+		return None
 	
 	@staticmethod
 	def _verify_alert_avg_deviation(data_value, avg_limits, avg):
