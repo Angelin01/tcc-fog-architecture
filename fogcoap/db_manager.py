@@ -664,7 +664,22 @@ class DatabaseManager:
 	
 	@staticmethod
 	def _verify_alert_avg_deviation(data_value, avg_limits, avg):
-		pass
+		if hasattr(data_value, '__iter__'):
+			alerts = []
+			for value in data_value:
+				if avg_limits[0] is not None and value < (1 - avg_limits[0]) * avg:
+					alerts.append(f'{value} < {1 - avg_limits[0]}*{avg}')
+				elif avg_limits[1] is not None and value > (1 + avg_limits[1]) * avg:
+					alerts.append(f'{value} > {1 + avg_limits[1]}*{avg}')
+			return alerts if len(alerts) > 0 else None
+		
+		else:
+			if avg_limits[0] is not None and data_value < (1 - avg_limits[0]) * avg:
+				return f'{data_value} < {1 - avg_limits[0]}*{avg}'
+			elif avg_limits[1] is not None and data_value > (1 + avg_limits[1]) * avg:
+				return f'{data_value} > {1 + avg_limits[1]}*{avg}'
+		
+		return None
 
 	@staticmethod
 	def set_logging_level(level: int) -> None:
