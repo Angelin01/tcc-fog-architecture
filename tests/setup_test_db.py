@@ -65,6 +65,7 @@ def main():
 		if has_datatype and input_yn(f'Type "{datatype}" already registered, delete?'):
 			print(f'Deleting type "{datatype}"')
 			type_metadata.delete_one({'name': datatype})
+			has_datatype = False
 		
 		if not has_datatype:
 			getattr(registerer, f'register_{datatype}')()
