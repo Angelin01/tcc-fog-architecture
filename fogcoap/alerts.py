@@ -16,11 +16,11 @@ class ArrayTreatment(Enum):
 	MAX the highest value and
 	MEDIAN takes the median value.
 	"""
-	INDIVIDUALLY = 0,
-	MEAN = 1,
-	SUM = 2,
-	MIN = 3,
-	MAX = 4,
+	INDIVIDUALLY = 0
+	MEAN = 1
+	SUM = 2
+	MIN = 3
+	MAX = 4
 	MEDIAN = 5
 
 
