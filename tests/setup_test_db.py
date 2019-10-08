@@ -23,16 +23,55 @@ class Register:
 			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)
-		
 	
 	def register_water_level(self):
 		print('Registering water_level')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(0.1, 9.9),
+			interval_groups=[(4, 5), (7, 8)]
+		)
+		
+		self._db_manager.register_datatype(
+			name='water_level',
+			storage_type=StorageType.NUMBER,
+			valid_bounds=(0, 10),
+			unit='m',
+			alert_spec=alert_spec
+		)
 	
 	def register_volts(self):
 		print('Registering volts')
+		alert_spec = AlertSpec(
+			False,
+			interval_groups=[(-1.1, 1.1)],
+			array_treatment=ArrayTreatment.INDIVIDUALLY
+		)
+		
+		self._db_manager.register_datatype(
+			name='volts',
+			storage_type=StorageType.ARRAY,
+			array_type=StorageType.NUMBER,
+			valid_bounds=(-24, 24),
+			unit='V',
+			alert_spec=alert_spec
+		)
 	
 	def register_temp(self):
 		print('Registering temp')
+		alert_spec = AlertSpec(
+			True,
+			avg_deviation=(0.75, 1),
+			past_avg_count=10
+		)
+		
+		self._db_manager.register_datatype(
+			name='temp',
+			storage_type=StorageType.NUMBER,
+			valid_bounds=(-273.15, None),
+			unit='C',
+			alert_spec=alert_spec
+		)
 
 
 def input_yn(msg):
