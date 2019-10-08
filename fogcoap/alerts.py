@@ -71,7 +71,7 @@ class AlertSpec:
 			self.past_avg_count = None
 		
 		self.prohibit_insert = prohibit_insert
-		if array_treatment not in ArrayTreatment:
+		if array_treatment is not None and array_treatment not in ArrayTreatment:
 			raise TypeError('array_treatment must be of type ArrayTreatment')
 		
 		self.array_treatment = array_treatment
