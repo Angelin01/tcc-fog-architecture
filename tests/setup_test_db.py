@@ -1,5 +1,9 @@
+from os import makedirs, path
 from fogcoap import DatabaseManager, AlertSpec, StorageType
 from fogcoap.alerts import ArrayTreatment
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from pymongo import MongoClient
 from pymongo.database import Database, Collection
 
@@ -91,24 +95,68 @@ def main():
 	client = MongoClient(uri)
 	db: Database = client[database]
 	type_metadata: Collection = db['type_metadata']
+	client_registry: Collection = db['client_registry']
+	
+	# ============================= #
+	# Clean existing data
+	# ============================= #
 	
 	if input_yn('Clean all data?'):
 		print('Cleaning data')
 		for coll in db.list_collection_names(filter={'name': {'$regex': 'data\.'}}):
 			db.drop_collection(coll)
 	
+	# ============================= #
+	# Register datatypes
+	# ============================= #
+	
 	registerer = Register(db_manager)
 	datatypes = ['pressure', 'water_level', 'volts', 'temp']
 	for datatype in datatypes:
 		has_datatype = type_metadata.find_one({'name': datatype}) is not None
-		if has_datatype and input_yn(f'Type "{datatype}" already registered, delete?'):
+		if has_datatype and input_yn(f'Type "{datatype}" already registered, delete? '):
 			print(f'Deleting type "{datatype}"')
 			type_metadata.delete_one({'name': datatype})
 			has_datatype = False
 		
 		if not has_datatype:
 			getattr(registerer, f'register_{datatype}')()
-
+	
+	# ============================ #
+	# Register clients
+	# ============================ #
+	
+	num_clients = int(input('How many clients do you want to register? '))
+	if num_clients > 0:
+		prefix = input('Choose a client name prefix: ') or 'client'
+		output_dir = path.join(path.abspath(__file__), 'keys')
+		makedirs(output_dir, exist_ok=True)
+		
+		for i in range(num_clients):
+			client_name = f'{prefix}{i}'
+			has_client = client_registry.find_one({'name': client_name})
+			if has_client and input_yn(f'Client {client_name} already registered, delete? '):
+				print(f'Deleting client {client_name}')
+				client_registry.delete_one({'name': client_name})
+				has_client = False
+			
+			if not has_client:
+				private_key = ec.generate_private_key(ec.SECP384R1, default_backend())
+				public_key_serialized = private_key.public_key().public_bytes(encoding=serialization.Encoding.PEM,
+				                                                              format=serialization.PublicFormat.SubjectPublicKeyInfo)
+				private_key_serialized = private_key.private_bytes(encoding=serialization.Encoding.PEM,
+				                                                   format=serialization.PrivateFormat.PKCS8,
+				                                                   encryption_algorithm=serialization.NoEncryption())
+				
+				db_manager.register_client(client_name, public_key_serialized)
+				with open(path.join(output_dir, f'{client_name}_priv.pem'), 'wb') as key:
+					key.write(private_key_serialized)
+			
+				print(f'Registered client {client_name}')
+		
+		print(f'Finished registering clients, keys have been placed in {output_dir}/CLIENT_priv.pem')
+			
+	
 	db_manager.close()
 	client.close()
 
