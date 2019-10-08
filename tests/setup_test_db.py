@@ -129,7 +129,7 @@ def main():
 	num_clients = int(input('How many clients do you want to register? '))
 	if num_clients > 0:
 		prefix = input('Choose a client name prefix: ') or 'client'
-		output_dir = path.join(path.abspath(__file__), 'keys')
+		output_dir = path.abspath(path.join(path.abspath(__file__), path.pardir, 'keys'))
 		makedirs(output_dir, exist_ok=True)
 		
 		for i in range(num_clients):
@@ -154,7 +154,7 @@ def main():
 			
 				print(f'Registered client {client_name}')
 		
-		print(f'Finished registering clients, keys have been placed in {output_dir}/CLIENT_priv.pem')
+		print(f'Finished registering clients, keys have been placed in {output_dir}{path.sep}[CLIENT_NAME]_priv.pem')
 			
 	
 	db_manager.close()
