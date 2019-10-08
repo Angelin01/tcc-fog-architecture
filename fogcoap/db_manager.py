@@ -631,13 +631,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_alert_abs_thresholds(data_value, abs_thresholds):
 		if hasattr(data_value, '__iter__'):
-			alerts = []
-			for value in data_value:
-				if abs_thresholds[0] is not None and value < abs_thresholds[0]:
-					alerts.append(f'{value} < {abs_thresholds[0]}')
-				elif abs_thresholds[1] is not None and value > abs_thresholds[1]:
-					alerts.append(f'{value} > {abs_thresholds[1]}')
-			return alerts if len(alerts) > 0 else None
+			return DatabaseManager._verify_loop_alert(DatabaseManager._verify_alert_abs_thresholds, data_value, abs_thresholds)
 			
 		else:
 			if abs_thresholds[0] is not None and data_value < abs_thresholds[0]:
@@ -650,11 +644,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_alert_interval(data_value, interval):
 		if hasattr(data_value, '__iter__'):
-			alerts = []
-			for value in data_value:
-				if interval[0] < value < interval[1]:
-					alerts.append(f'{interval[0]} < {value} < {interval[1]}')
-			return alerts if len(alerts) > 0 else None
+			return DatabaseManager._verify_loop_alert(DatabaseManager._verify_alert_interval, data_value, interval)
 		
 		else:
 			if interval[0] < data_value < interval[1]:
@@ -665,13 +655,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_alert_avg_deviation(data_value, avg_limits, avg):
 		if hasattr(data_value, '__iter__'):
-			alerts = []
-			for value in data_value:
-				if avg_limits[0] is not None and value < (1 - avg_limits[0]) * avg:
-					alerts.append(f'{value} < {1 - avg_limits[0]}*{avg}')
-				elif avg_limits[1] is not None and value > (1 + avg_limits[1]) * avg:
-					alerts.append(f'{value} > {1 + avg_limits[1]}*{avg}')
-			return alerts if len(alerts) > 0 else None
+			return DatabaseManager._verify_loop_alert(DatabaseManager._verify_alert_avg_deviation, data_value, avg_limits, avg)
 		
 		else:
 			if avg_limits[0] is not None and data_value < (1 - avg_limits[0]) * avg:
@@ -680,6 +664,20 @@ class DatabaseManager:
 				return f'{data_value} > {1 + avg_limits[1]}*{avg}'
 		
 		return None
+
+	@staticmethod
+	def _verify_loop_alert(func, data_value, *args, **kwargs):
+		if not hasattr(data_value, '__iter__'):
+			raise TypeError('Loop alert method must receive an iterable data_value')
+		
+		has_alert = False
+		alerts = []
+		for value in data_value:
+			alert = func(value, *args, **kwargs)
+			alert.append(alerts)
+			if alert is not None:
+				has_alert = True
+		return alerts if has_alert else None
 
 	@staticmethod
 	def set_logging_level(level: int) -> None:
