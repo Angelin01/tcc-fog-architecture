@@ -1,14 +1,29 @@
-from fogcoap import DatabaseManager, AlertSpec
+from fogcoap import DatabaseManager, AlertSpec, StorageType
+from fogcoap.alerts import ArrayTreatment
 from pymongo import MongoClient
 from pymongo.database import Database, Collection
 
 
 class Register:
-	def __init__(self, db_manager):
+	def __init__(self, db_manager: DatabaseManager):
 		self._db_manager = db_manager
 	
 	def register_pressure(self):
 		print('Registering pressure')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(None, 1000),
+			array_treatment=ArrayTreatment.MAX
+		)
+		
+		self._db_manager.register_datatype(
+			name='pressure',
+			storage_type=StorageType.ARRAY,
+			array_type=StorageType.NUMBER,
+			valid_bounds=(0, None),
+			alert_spec=alert_spec
+		)
+		
 	
 	def register_water_level(self):
 		print('Registering water_level')
