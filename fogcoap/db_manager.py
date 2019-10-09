@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Optional
 
 
 database_logger = logging.Logger(__name__)
@@ -293,17 +293,18 @@ class DatabaseManager:
 		database_logger.info(f'Received successful data insert for client {client_info["name"]}')
 		return self._data[str(client_info['name'])][str(datatype_info['name'])].insert_one({'value': data_value, 'datetime': data_datetime}).inserted_id
 
-	def verify_alert(self, data: dict, client: Union[str, ObjectId]) -> Union[dict, None]:
+	def verify_alert(self, client: Union[str, ObjectId], data: dict) -> Optional[dict]:
 		"""
 		Verifies the client supplied data for alerts.
+		:param client: Either the client name as a string or the client's `ObjectId` as returned by the `register_client` method.
 		:param data: A dictionary containing the data. Should contain 3 keys:
 		             "n" or "name": the name of the registered datatype.
 		             "v" or "value": the actual value of the data. Must match the unit type specified when registering the data.
 		             "t" or "time": A timestamp of when the data was collected. Can be an actual `int` timestamp, as the number of seconds since
 		                            1970-01-01 UTC, an ISO date formatted string or a Python `datetime` object.
 		:return: Returns `None` if no alerts were found, otherwise returns a dict with three keys: "n" and "t", the same as supplied in the client
-		         data, and the key "a" (for alert) which contains a *description string* of the alert similar to `value < min_threshold` or
-		         `value > max_threshold`.
+		         data, the key "a" (for alert) which contains a *description string* of the alert similar to `value < min_threshold` or
+		         `value > max_threshold` and a key "p" (for prohibit insert), a bool on whether or not the data is allowed to be inserted.
 		"""
 		data_name, data_value, data_datetime = self._verify_data(data)
 		datatype_info = self._verify_datatype(data_name)
@@ -338,18 +339,20 @@ class DatabaseManager:
 			elif alert_spec.array_treatment is ArrayTreatment.MEDIAN:
 				data_value = np.median(data_value)
 		
+		alert_msg = {'n': data_name, 't': int(data_datetime.timestamp()), 'p': alert_spec.prohibit_insert}
+		
 		if alert_spec.abs_alert_thresholds is not None:
 			alert = self._verify_alert_abs_thresholds(data_value, alert_spec.abs_alert_thresholds)
 			if alert is not None:
-				# TODO: Actually do some stuff, don't just return it
-				return alert
+				alert_msg['a'] = alert
+				return alert_msg
 		
 		if alert_spec.interval_groups is not None:
 			for interval in alert_spec.interval_groups:
 				alert = self._verify_alert_interval(data_value, interval)
 				if alert is not None:
-					# TODO: Actually do some stuff, don't just return it
-					return alert
+					alert_msg['a'] = alert
+					return alert_msg
 		
 		# We can assume that past_avg_count is also not None since an AlertSpec checks for it
 		if alert_spec.avg_deviation is not None:
@@ -362,8 +365,10 @@ class DatabaseManager:
 				
 				alert = self._verify_alert_avg_deviation(data_value, alert_spec.avg_deviation, avg)
 				if alert is not None:
-					# TODO: Actually do some stuff, don't just return it
-					return alert
+					alert_msg['a'] = alert
+					return alert_msg
+		
+		return None
 
 	def query_data_client(self, client: Union[str, ObjectId], datatype: Union[str, ObjectId] = None,
 	                      date_range: Tuple[Union[str, int, datetime, None], Union[str, int, datetime, None]] = None) -> dict:
