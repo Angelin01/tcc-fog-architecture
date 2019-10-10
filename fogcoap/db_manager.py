@@ -679,7 +679,7 @@ class DatabaseManager:
 		alerts = []
 		for value in data_value:
 			alert = func(value, *args, **kwargs)
-			alert.append(alerts)
+			alerts.append(alert)
 			if alert is not None:
 				has_alert = True
 		return alerts if has_alert else None
