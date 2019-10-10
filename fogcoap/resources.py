@@ -282,11 +282,13 @@ class ClientResource(BaseResource):
 					alert = self._db_manager.verify_alert(self._name, data)
 					if alert is not None:
 						alerts.append(alert)
-				if alert is not None and not alert['p']:
-					obj_id = self._db_manager.insert_data(self._name, data)
-				else:
+						
+				if alert is not None and alert['p']:
 					insert_status.append({'error': f'Alert prohibits insert: {alert["a"]}'})
 					continue
+				
+				obj_id = self._db_manager.insert_data(self._name, data)
+				
 			except InvalidData as e:
 				insert_status.append({'error': str(e)})
 			
