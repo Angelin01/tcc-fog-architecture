@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.exceptions import InvalidSignature
-from fogcoap import DatabaseManager, InvalidData
+from fogcoap import DataManager, InvalidData
 from fogcoap.alerts import ClientAlert
 
 
@@ -62,7 +62,7 @@ class BaseResource(Resource):
 	Base resource class for other resource classes.
 	Simply contains the database manager in `self._db_manager` and provides de `_build_msg` method.
 	"""
-	def __init__(self, db_manager: DatabaseManager):
+	def __init__(self, db_manager: DataManager):
 		self._db_manager = db_manager
 		super().__init__()
 	
@@ -82,7 +82,7 @@ class ListClientsResource(BaseResource):
 	"""
 	Provides a GET method that returns all registered clients.
 	"""
-	def __init__(self, db_manager: DatabaseManager):
+	def __init__(self, db_manager: DataManager):
 		data = {client['name']: {key: value for (key, value) in client.items() if key != 'name' and key != 'ecc_public_key'}
 		        for client in db_manager.query_clients()
 		}
@@ -110,7 +110,7 @@ class ListDatatypesResource(BaseResource):
 	Provides a GET method that returns all registered datatypes.
 	"""
 	
-	def __init__(self, db_manager: DatabaseManager):
+	def __init__(self, db_manager: DataManager):
 		data = {datatype['name']: {key: value for (key, value) in datatype.items() if key != 'name'}
 		        for datatype in db_manager.query_datatypes()
 		}
@@ -139,7 +139,7 @@ class ClientResource(BaseResource):
 	Representation of a client, for receiving the data sent from the client and for querying the stored data.
 	"""
 	
-	def __init__(self, name: str, ecc_public_key: bytes, db_manager: DatabaseManager, alert_resource: ClientAlert = None):
+	def __init__(self, name: str, ecc_public_key: bytes, db_manager: DataManager, alert_resource: ClientAlert = None):
 		"""
 		Simple class for a client.
 		:param name: The client's registered name.
@@ -316,7 +316,7 @@ class DatatypeResource(BaseResource):
 	Representation of a datatype, for querying the stored data by datatype instead of by client.
 	"""
 	
-	def __init__(self, name: str, db_manager: DatabaseManager):
+	def __init__(self, name: str, db_manager: DataManager):
 		"""
 		Simple class for a datatype.
 		:param name: The datatype's registered name.

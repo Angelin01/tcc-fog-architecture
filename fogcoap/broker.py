@@ -3,13 +3,13 @@ from signal import SIGINT, SIGTERM
 from aiocoap import Context
 from typing import Union
 from aiocoap.resource import Site, WKCResource, Resource, ObservableResource
-from fogcoap.db_manager import DatabaseManager
+from fogcoap.data_manager import DataManager
 from fogcoap.resources import ClientResource, DatatypeResource, ListClientsResource, ListDatatypesResource, AllData
 from fogcoap.alerts import ClientAlert
 
 
 class Broker:
-	def __init__(self, db_manager: DatabaseManager, port: int = 5683):
+	def __init__(self, db_manager: DataManager, port: int = 5683):
 		self._db_manager = db_manager
 		self._port = port
 		

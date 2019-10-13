@@ -1,3 +1,3 @@
-from fogcoap.db_manager import DatabaseManager, StorageType, InvalidData, InvalidClient
+from fogcoap.data_manager import DataManager, StorageType, InvalidData, InvalidClient
 from fogcoap.alerts import AlertSpec
 from fogcoap.broker import Broker

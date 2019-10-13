@@ -1,5 +1,5 @@
 from os import makedirs, path
-from fogcoap import DatabaseManager, AlertSpec, StorageType
+from fogcoap import DataManager, AlertSpec, StorageType
 from fogcoap.alerts import ArrayTreatment
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -9,8 +9,8 @@ from pymongo.database import Database, Collection
 
 
 class Register:
-	def __init__(self, db_manager: DatabaseManager):
-		self._db_manager = db_manager
+	def __init__(self, data_manager: DataManager):
+		self._data_manager = data_manager
 	
 	def register_pressure(self):
 		print('Registering pressure')
@@ -20,7 +20,7 @@ class Register:
 			array_treatment=ArrayTreatment.MAX
 		)
 		
-		self._db_manager.register_datatype(
+		self._data_manager.register_datatype(
 			name='pressure',
 			storage_type=StorageType.ARRAY,
 			array_type=StorageType.NUMBER,
@@ -36,7 +36,7 @@ class Register:
 			alert_intervals=[(4, 5), (7, 8)]
 		)
 		
-		self._db_manager.register_datatype(
+		self._data_manager.register_datatype(
 			name='water_level',
 			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, 10),
@@ -52,7 +52,7 @@ class Register:
 			array_treatment=ArrayTreatment.INDIVIDUALLY
 		)
 		
-		self._db_manager.register_datatype(
+		self._data_manager.register_datatype(
 			name='volts',
 			storage_type=StorageType.ARRAY,
 			array_type=StorageType.NUMBER,
@@ -69,7 +69,7 @@ class Register:
 			past_avg_count=10
 		)
 		
-		self._db_manager.register_datatype(
+		self._data_manager.register_datatype(
 			name='temp',
 			storage_type=StorageType.NUMBER,
 			valid_bounds=(-273.15, None),
@@ -91,7 +91,7 @@ def main():
 	uri = input('MongoDB uri to connect to: ') or 'mongodb://localhost'
 	database = input('Database to connect to: ')
 
-	db_manager = DatabaseManager(database, uri)
+	data_manager = DataManager(database, uri)
 	client = MongoClient(uri)
 	db: Database = client[database]
 	type_metadata: Collection = db['type_metadata']
@@ -110,7 +110,7 @@ def main():
 	# Register datatypes
 	# ============================= #
 	
-	registerer = Register(db_manager)
+	registerer = Register(data_manager)
 	datatypes = ['pressure', 'water_level', 'volts', 'temp']
 	for datatype in datatypes:
 		has_datatype = type_metadata.find_one({'name': datatype}) is not None
@@ -148,7 +148,7 @@ def main():
 				                                                   format=serialization.PrivateFormat.PKCS8,
 				                                                   encryption_algorithm=serialization.NoEncryption())
 				
-				db_manager.register_client(client_name, public_key_serialized)
+				data_manager.register_client(client_name, public_key_serialized)
 				with open(path.join(output_dir, f'{client_name}_priv.pem'), 'wb') as key:
 					key.write(private_key_serialized)
 			
@@ -157,7 +157,7 @@ def main():
 		print(f'Finished registering clients, keys have been placed in {output_dir}{path.sep}[CLIENT_NAME]_priv.pem')
 			
 	
-	db_manager.close()
+	data_manager.close()
 	client.close()
 
 
