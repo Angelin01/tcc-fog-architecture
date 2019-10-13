@@ -347,8 +347,8 @@ class DatabaseManager:
 				alert_msg['a'] = alert
 				return alert_msg
 		
-		if alert_spec.interval_groups is not None:
-			for interval in alert_spec.interval_groups:
+		if alert_spec.alert_intervals is not None:
+			for interval in alert_spec.alert_intervals:
 				alert = self._verify_alert_interval(data_value, interval)
 				if alert is not None:
 					alert_msg['a'] = alert
@@ -621,8 +621,8 @@ class DatabaseManager:
 					   alert_spec.abs_alert_thresholds[1] is not None and alert_spec.abs_alert_thresholds[1] > bounds[1]:
 						raise ValueError(f'Alert thresholds can\'t be higher than high valid bound {bounds[1]}')
 			
-			if alert_spec.interval_groups is not None:
-				for group in alert_spec.interval_groups:
+			if alert_spec.alert_intervals is not None:
+				for group in alert_spec.alert_intervals:
 					if bounds[0] is not None:
 						if group[0] is not None and group[0] < bounds[0] or \
 						   group[1] is not None and group[1] < bounds[0]:

@@ -33,7 +33,7 @@ class Register:
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(0.1, 9.9),
-			interval_groups=[(4, 5), (7, 8)]
+			alert_intervals=[(4, 5), (7, 8)]
 		)
 		
 		self._db_manager.register_datatype(
@@ -48,7 +48,7 @@ class Register:
 		print('Registering volts')
 		alert_spec = AlertSpec(
 			False,
-			interval_groups=[(-1.1, 1.1)],
+			alert_intervals=[(-1.1, 1.1)],
 			array_treatment=ArrayTreatment.INDIVIDUALLY
 		)
 		

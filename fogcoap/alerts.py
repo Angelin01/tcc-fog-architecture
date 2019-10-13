@@ -26,11 +26,11 @@ class ArrayTreatment(Enum):
 
 class AlertSpec:
 	def __init__(self, prohibit_insert: bool, abs_alert_thresholds: Optional[Tuple[Optional[float], Optional[float]]] = None,
-	             interval_groups: Optional[List[Tuple[float, float]]] = None, array_treatment: Optional[ArrayTreatment] = None,
+	             alert_intervals: Optional[List[Tuple[float, float]]] = None, array_treatment: Optional[ArrayTreatment] = None,
 	             avg_deviation: Optional[Tuple[Optional[float], Optional[float]]] = None, past_avg_count: Optional[int] = None):
 		"""
 		An alert specification to be registered with a datatype.
-		At least one alert specification must be supplied: either `abs_alert_thresholds`, `interval_groups` or `avg_deviation`.
+		At least one alert specification must be supplied: either `abs_alert_thresholds`, `alert_intervals` or `avg_deviation`.
 		Additionally, if the `AlertSpec` is to be used with a datatype of the type ARRAY, `array_treatment` must be specified or the instance will not
 		be suitable for use with said datatype.
 		All alerts are optional, but at least one must be specified. Otherwise, simply use `None` when registering the datatype.
@@ -39,7 +39,7 @@ class AlertSpec:
 		:param abs_alert_thresholds: A tuple with two values. If any data received is OUTSIDE the range set by these two values, an alert with be
 		                             generated. The first value is the lower bound and the second value the higher bound. If one of the values is None,
 		                             only the other value will be considered as a lower bound.
-		:param interval_groups: A list of tuples of two values which specify lower and higher bounds, similar to `abs_alert_thresholds`, except an
+		:param alert_intervals: A list of tuples of two values which specify lower and higher bounds, similar to `abs_alert_thresholds`, except an
 		                        alert will be generated if any data received is INSIDE the range specified by any group.
 		:param array_treatment: How values of the type `ARRAY` must be treated. Must be an instance of `ArrayTreatment`.
 		:param avg_deviation: A tuple of two float values, specifying how much the data can deviate from the average of the last `past_avg_count`
@@ -51,7 +51,7 @@ class AlertSpec:
 		:param past_avg_count: How many of previous inserts should be used for the average. Note that until you have this many inserted values, the
 		                       average deviation alert will not be generated.
 		"""
-		if abs_alert_thresholds is None and interval_groups is None and array_treatment is None and avg_deviation is None:
+		if abs_alert_thresholds is None and alert_intervals is None and array_treatment is None and avg_deviation is None:
 			raise ValueError('An AlertSpec instance must have at least one alert parameter set, simply use None in case you don\'t want alerts')
 		
 		if abs_alert_thresholds is not None:
@@ -59,9 +59,9 @@ class AlertSpec:
 		else:
 			self.abs_alert_thresholds = None
 		
-		self.interval_groups = None
-		if interval_groups is not None:
-			for group in interval_groups:
+		self.alert_intervals = None
+		if alert_intervals is not None:
+			for group in alert_intervals:
 				self.add_interval(group)
 		
 		if avg_deviation is not None:
@@ -85,7 +85,7 @@ class AlertSpec:
 		return cls(
 			prohibit_insert=dict_obj['prohibit_insert'],
 			abs_alert_thresholds=dict_obj.get('abs_alert_thresholds'),
-			interval_groups=dict_obj.get('interval_groups'),
+			alert_intervals=dict_obj.get('alert_intervals'),
 			array_treatment=array_treatment,
 			avg_deviation=dict_obj.get('avg_deviation'),
 			past_avg_count=dict_obj.get('past_avg_count')
@@ -97,8 +97,8 @@ class AlertSpec:
 		if self.abs_alert_thresholds is not None:
 			obj['abs_alert_thresholds'] = self.abs_alert_thresholds
 			
-		if self.interval_groups is not None:
-			obj['interval_groups'] = self.interval_groups
+		if self.alert_intervals is not None:
+			obj['alert_intervals'] = self.alert_intervals
 			
 		if self.array_treatment is not None:
 			obj['array_treatment'] = self.array_treatment.value
@@ -127,10 +127,10 @@ class AlertSpec:
 		if interval_group[0] is None or interval_group[1] is None:
 			raise ValueError('Both values for the interval group must be set')
 		
-		if self.interval_groups is None:
-			self.interval_groups = [interval_group]
+		if self.alert_intervals is None:
+			self.alert_intervals = [interval_group]
 		else:
-			self.interval_groups.append(interval_group)
+			self.alert_intervals.append(interval_group)
 	
 	def set_avg_deviation(self, deviation: Tuple[Optional[float], Optional[float]], count: int):
 		if len(deviation) != 2:
