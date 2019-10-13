@@ -2,9 +2,12 @@ import fogcoap
 
 
 def main():
-	db = fogcoap.DatabaseManager('fogcoap')
-	broker = fogcoap.Broker(db)
+	print('Connecting to database')
+	dm = fogcoap.DataManager('fogcoap')
+	print('Starting broker')
+	broker = fogcoap.Broker(dm)
 	broker.run()
+	print('Stopped')
 
 
 if __name__ == '__main__':

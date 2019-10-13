@@ -40,7 +40,7 @@ StorageType._type_storage_dict = {
 }
 
 
-class DatabaseManager:
+class DataManager:
 	"""
 	Abstraction class for interacting with the MongoDB.
 	"""
@@ -556,8 +556,8 @@ class DatabaseManager:
 			date_filter = {}
 			if len(date_range) != 2:
 				raise ValueError('Expected 2 values in date range')
-			start_date = DatabaseManager._parse_timestamp(date_range[0]) if date_range[0] is not None else None
-			end_date = DatabaseManager._parse_timestamp(date_range[1]) if date_range[1] is not None else None
+			start_date = DataManager._parse_timestamp(date_range[0]) if date_range[0] is not None else None
+			end_date = DataManager._parse_timestamp(date_range[1]) if date_range[1] is not None else None
 			
 			if start_date is None and end_date is None:
 				raise ValueError('Either the start date or the end date must not be None')
@@ -636,7 +636,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_alert_abs_thresholds(data_value, abs_thresholds):
 		if hasattr(data_value, '__iter__'):
-			return DatabaseManager._verify_loop_alert(DatabaseManager._verify_alert_abs_thresholds, data_value, abs_thresholds)
+			return DataManager._verify_loop_alert(DataManager._verify_alert_abs_thresholds, data_value, abs_thresholds)
 			
 		else:
 			if abs_thresholds[0] is not None and data_value < abs_thresholds[0]:
@@ -649,7 +649,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_alert_interval(data_value, interval):
 		if hasattr(data_value, '__iter__'):
-			return DatabaseManager._verify_loop_alert(DatabaseManager._verify_alert_interval, data_value, interval)
+			return DataManager._verify_loop_alert(DataManager._verify_alert_interval, data_value, interval)
 		
 		else:
 			if interval[0] < data_value < interval[1]:
@@ -660,7 +660,7 @@ class DatabaseManager:
 	@staticmethod
 	def _verify_alert_avg_deviation(data_value, avg_limits, avg):
 		if hasattr(data_value, '__iter__'):
-			return DatabaseManager._verify_loop_alert(DatabaseManager._verify_alert_avg_deviation, data_value, avg_limits, avg)
+			return DataManager._verify_loop_alert(DataManager._verify_alert_avg_deviation, data_value, avg_limits, avg)
 		
 		else:
 			if avg_limits[0] is not None and data_value < (1 - avg_limits[0]) * avg:
