@@ -328,16 +328,7 @@ class DataManager:
 		
 		# If it's an array of values, convert the value to be whatever it needs to be according to the spec
 		if value_type == StorageType.ARRAY and alert_spec.array_treatment is not ArrayTreatment.INDIVIDUALLY:
-			if alert_spec.array_treatment is ArrayTreatment.MEAN:
-				data_value = np.mean(data_value)
-			elif alert_spec.array_treatment is ArrayTreatment.SUM:
-				data_value = np.sum(data_value)
-			elif alert_spec.array_treatment is ArrayTreatment.MAX:
-				data_value = np.max(data_value)
-			elif alert_spec.array_treatment is ArrayTreatment.MIN:
-				data_value = np.min(data_value)
-			elif alert_spec.array_treatment is ArrayTreatment.MEDIAN:
-				data_value = np.median(data_value)
+			data_value = ArrayTreatment.get_func(alert_spec.array_treatment)(data_value)
 		
 		alert_msg = {'n': data_name, 't': int(data_datetime.timestamp()), 'p': alert_spec.prohibit_insert}
 		
@@ -359,9 +350,14 @@ class DataManager:
 			client_info = self._verify_client(client)
 			# Only check avg if the number of documents stored is already higher than the past_avg_count necessary
 			if self._database[self._Data][client_info['name']][datatype_info['name']].count_documents({}) >= alert_spec.past_avg_count:
-				avg = np.mean([record['value'] for record in
-				              self._database[self._Data][client_info['name']][datatype_info['name']]
-				              .find(projection={'_id': 0, 'value': 1}).sort('_id', pymongo.DESCENDING).limit(alert_spec.past_avg_count)])
+				past_values = [record['value'] for record in
+				               self._database[self._Data][client_info['name']][datatype_info['name']]
+				               .find(projection={'_id': 0, 'value': 1}).sort('_id', pymongo.DESCENDING).limit(alert_spec.past_avg_count)]
+				
+				if value_type == StorageType.ARRAY and alert_spec.array_treatment is not ArrayTreatment.INDIVIDUALLY:
+					past_values = list(map(ArrayTreatment.get_func(alert_spec.array_treatment), past_values))
+					
+				avg = np.mean(past_values, axis=0)
 				
 				alert = self._verify_alert_avg_deviation(data_value, alert_spec.avg_deviation, avg)
 				if alert is not None:
@@ -660,7 +656,14 @@ class DataManager:
 	@staticmethod
 	def _verify_alert_avg_deviation(data_value, avg_limits, avg):
 		if hasattr(data_value, '__iter__'):
-			return DataManager._verify_loop_alert(DataManager._verify_alert_avg_deviation, data_value, avg_limits, avg)
+			has_alert = False
+			alerts = []
+			for value, single_avg in zip(data_value, avg):
+				alert = DataManager._verify_alert_avg_deviation(value, avg_limits, single_avg)
+				alerts.append(alert)
+				if alert is not None:
+					has_alert = True
+			return alerts if has_alert else None
 		
 		else:
 			if avg_limits[0] is not None and data_value < (1 - avg_limits[0]) * avg:
