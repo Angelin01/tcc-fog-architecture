@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from enum import Enum
 from typing import Union, Tuple, Optional, List
 from aiocoap import Message
@@ -22,6 +23,22 @@ class ArrayTreatment(Enum):
 	MIN = 3
 	MAX = 4
 	MEDIAN = 5
+
+	_ignore_ = ['_func_dict']
+	_func_dict = {}
+	
+	@staticmethod
+	def get_func(treatment):
+		return ArrayTreatment._func_dict.get(treatment)
+
+
+ArrayTreatment._func_dict = {
+	ArrayTreatment.MEAN: np.mean,
+	ArrayTreatment.SUM: np.sum,
+	ArrayTreatment.MIN: np.min,
+	ArrayTreatment.MAX: np.max,
+	ArrayTreatment.MEDIAN: np.median
+}
 
 
 class AlertSpec:
