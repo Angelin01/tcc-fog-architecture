@@ -121,7 +121,7 @@ def input_yn(msg):
 def main():
 	uri = input('MongoDB uri to connect to: ') or 'mongodb://localhost'
 	database = input('Database to connect to: ')
-
+	
 	data_manager = DataManager(database, uri)
 	client = MongoClient(uri)
 	db: Database = client[database]
@@ -142,7 +142,7 @@ def main():
 	# ============================= #
 	
 	registerer = Register(data_manager)
-	datatypes = ['pressure_1', 'pressure_2', 'water_level_1', 'water_level_2', 'volts', 'temp']
+	datatypes = ['pressure', 'water_level', 'volts', 'temp']
 	for datatype in datatypes:
 		has_datatype = type_metadata.find_one({'name': datatype}) is not None
 		if has_datatype and input_yn(f'Type "{datatype}" already registered, delete? '):
@@ -182,7 +182,7 @@ def main():
 				data_manager.register_client(client_name, public_key_serialized)
 				with open(path.join(output_dir, f'{client_name}_priv.pem'), 'wb') as key:
 					key.write(private_key_serialized)
-			
+				
 				print(f'Registered client {client_name}')
 		
 		print(f'Finished registering clients, keys have been placed in {output_dir}{path.sep}[CLIENT_NAME]_priv.pem')
