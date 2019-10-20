@@ -107,6 +107,16 @@ class Register:
 			unit='C',
 			alert_spec=alert_spec
 		)
+	
+	def register_location(self):
+		print('Registering location')
+		alert_spec = None
+		
+		self._data_manager.register_datatype(
+			name='location',
+			storage_type=StorageType.STR,
+			alert_spec=alert_spec
+		)
 
 
 def input_yn(msg):
@@ -142,7 +152,7 @@ def main():
 	# ============================= #
 	
 	registerer = Register(data_manager)
-	datatypes = ['pressure_1', 'pressure_2', 'water_level_1', 'water_level_2', 'volts', 'temp']
+	datatypes = ['pressure_1', 'pressure_2', 'water_level_1', 'water_level_2', 'volts', 'temp', 'location']
 	for datatype in datatypes:
 		has_datatype = type_metadata.find_one({'name': datatype}) is not None
 		if has_datatype and input_yn(f'Type "{datatype}" already registered, delete? '):
