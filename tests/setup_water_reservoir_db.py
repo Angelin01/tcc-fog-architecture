@@ -13,7 +13,7 @@ class Register:
 		self._data_manager = data_manager
 	
 	def register_pressure_1(self):
-		print('Registering pressure')
+		print('Registering pressure_1')
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(None, 1000),
@@ -29,7 +29,7 @@ class Register:
 		)
 	
 	def register_pressure_2(self):
-		print('Registering pressure')
+		print('Registering pressure_2')
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(100, 750),
