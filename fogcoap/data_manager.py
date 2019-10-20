@@ -208,7 +208,7 @@ class DataManager:
 				'array_type': None if array_type is None else array_type.value,
 				'unit': unit,
 				'valid_bounds': valid_bounds,
-				'alert_spec': alert_spec.to_dict()
+				'alert_spec': alert_spec.to_dict() if alert_spec is not None else None
 			}).inserted_id
 		except DuplicateKeyError:
 			database_logger.error(f'Failed to add type {name} as it\'s a duplicate')
