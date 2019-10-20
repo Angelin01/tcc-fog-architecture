@@ -14,80 +14,28 @@ class Register:
 	
 	def register_pressure_1(self):
 		print('Registering pressure')
-		alert_spec = AlertSpec(
-			False,
-			abs_alert_thresholds=(None, 1000),
-			array_treatment=ArrayTreatment.MAX
-		)
+		alert_spec = None
 		
 		self._data_manager.register_datatype(
-			name='pressure_1',
-			storage_type=StorageType.ARRAY,
-			array_type=StorageType.NUMBER,
+			name='pressure',
+			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)
 	
-	def register_pressure_2(self):
-		print('Registering pressure')
+	def register_humidity(self):
+		print('Registering humidity')
 		alert_spec = AlertSpec(
 			False,
-			abs_alert_thresholds=(100, 750),
-			array_treatment=ArrayTreatment.MAX
+			abs_alert_thresholds=(20, 95),
+			array_treatment=ArrayTreatment.MIN
 		)
 		
 		self._data_manager.register_datatype(
-			name='pressure_2',
+			name='humidity',
 			storage_type=StorageType.ARRAY,
 			array_type=StorageType.NUMBER,
-			valid_bounds=(0, None),
-			alert_spec=alert_spec
-		)
-	
-	def register_water_level_1(self):
-		print('Registering water_level_2')
-		alert_spec = AlertSpec(
-			False,
-			abs_alert_thresholds=(10, 50)
-		)
-		
-		self._data_manager.register_datatype(
-			name='water_level_1',
-			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, 100),
-			unit='m',
-			alert_spec=alert_spec
-		)
-	
-	def register_water_level_2(self):
-		print('Registering water_level_2')
-		alert_spec = AlertSpec(
-			False,
-			abs_alert_thresholds=(7.5, 35)
-		)
-		
-		self._data_manager.register_datatype(
-			name='water_level',
-			storage_type=StorageType.NUMBER,
-			valid_bounds=(0, 100),
-			unit='m',
-			alert_spec=alert_spec
-		)
-	
-	def register_volts(self):
-		print('Registering volts')
-		alert_spec = AlertSpec(
-			False,
-			alert_intervals=[(-4.2, 4.2)],
-			array_treatment=ArrayTreatment.INDIVIDUALLY
-		)
-		
-		self._data_manager.register_datatype(
-			name='volts',
-			storage_type=StorageType.ARRAY,
-			array_type=StorageType.NUMBER,
-			valid_bounds=(-6, 6),
-			unit='V',
 			alert_spec=alert_spec
 		)
 	
@@ -95,16 +43,63 @@ class Register:
 		print('Registering temp')
 		alert_spec = AlertSpec(
 			False,
-			abs_alert_thresholds=(-10, 45),
+			abs_alert_thresholds=(-5, 25),
 			avg_deviation=(0.25, 0.25),
-			past_avg_count=10
+			past_avg_count=5
 		)
 		
 		self._data_manager.register_datatype(
 			name='temp',
 			storage_type=StorageType.NUMBER,
 			valid_bounds=(-273.15, None),
-			unit='C',
+			alert_spec=alert_spec
+		)
+	
+	def register_pm1(self):
+		print('Registering pm1')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(None, 60),
+			array_treatment=ArrayTreatment.MEAN
+		)
+		
+		self._data_manager.register_datatype(
+			name='pm1',
+			storage_type=StorageType.ARRAY,
+			array_type=StorageType.NUMBER,
+			valid_bounds=(0, None),
+			alert_spec=alert_spec
+		)
+	
+	def register_pm25(self):
+		print('Registering pm2.5')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(None, 100),
+			array_treatment=ArrayTreatment.MEAN
+		)
+		
+		self._data_manager.register_datatype(
+			name='pm25',
+			storage_type=StorageType.ARRAY,
+			array_type=StorageType.NUMBER,
+			valid_bounds=(0, None),
+			alert_spec=alert_spec
+		)
+	
+	def register_pm10(self):
+		print('Registering pm10')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(None, 140),
+			array_treatment=ArrayTreatment.MEAN
+		)
+		
+		self._data_manager.register_datatype(
+			name='pm10',
+			storage_type=StorageType.ARRAY,
+			array_type=StorageType.NUMBER,
+			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)
 
@@ -142,7 +137,7 @@ def main():
 	# ============================= #
 	
 	registerer = Register(data_manager)
-	datatypes = ['pressure', 'water_level', 'volts', 'temp']
+	datatypes = ['pressure', 'humidity', 'temp', 'pm1', 'pm25', 'pm10']
 	for datatype in datatypes:
 		has_datatype = type_metadata.find_one({'name': datatype}) is not None
 		if has_datatype and input_yn(f'Type "{datatype}" already registered, delete? '):
