@@ -12,7 +12,7 @@ class Register:
 	def __init__(self, data_manager: DataManager):
 		self._data_manager = data_manager
 	
-	def register_pressure_1(self):
+	def register_pressure(self):
 		print('Registering pressure')
 		alert_spec = None
 		
