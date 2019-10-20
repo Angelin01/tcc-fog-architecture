@@ -45,7 +45,7 @@ class Register:
 		)
 	
 	def register_water_level_1(self):
-		print('Registering water_level_2')
+		print('Registering water_level_1')
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(10, 50)
@@ -67,7 +67,7 @@ class Register:
 		)
 		
 		self._data_manager.register_datatype(
-			name='water_level',
+			name='water_level_2',
 			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, 100),
 			unit='m',
