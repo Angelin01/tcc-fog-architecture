@@ -12,7 +12,7 @@ class Register:
 	def __init__(self, data_manager: DataManager):
 		self._data_manager = data_manager
 	
-	def register_pressure(self):
+	def register_pressure_1(self):
 		print('Registering pressure')
 		alert_spec = AlertSpec(
 			False,
@@ -21,25 +21,55 @@ class Register:
 		)
 		
 		self._data_manager.register_datatype(
-			name='pressure',
+			name='pressure_1',
 			storage_type=StorageType.ARRAY,
 			array_type=StorageType.NUMBER,
 			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)
 	
-	def register_water_level(self):
-		print('Registering water_level')
+	def register_pressure_2(self):
+		print('Registering pressure')
 		alert_spec = AlertSpec(
 			False,
-			abs_alert_thresholds=(0.1, 9.9),
-			alert_intervals=[(4, 5), (7, 8)]
+			abs_alert_thresholds=(100, 750),
+			array_treatment=ArrayTreatment.MAX
+		)
+		
+		self._data_manager.register_datatype(
+			name='pressure_2',
+			storage_type=StorageType.ARRAY,
+			array_type=StorageType.NUMBER,
+			valid_bounds=(0, None),
+			alert_spec=alert_spec
+		)
+	
+	def register_water_level_1(self):
+		print('Registering water_level_2')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(10, 50)
+		)
+		
+		self._data_manager.register_datatype(
+			name='water_level_1',
+			storage_type=StorageType.NUMBER,
+			valid_bounds=(0, 100),
+			unit='m',
+			alert_spec=alert_spec
+		)
+	
+	def register_water_level_2(self):
+		print('Registering water_level_2')
+		alert_spec = AlertSpec(
+			False,
+			abs_alert_thresholds=(7.5, 35)
 		)
 		
 		self._data_manager.register_datatype(
 			name='water_level',
 			storage_type=StorageType.NUMBER,
-			valid_bounds=(0, 10),
+			valid_bounds=(0, 100),
 			unit='m',
 			alert_spec=alert_spec
 		)
@@ -48,7 +78,7 @@ class Register:
 		print('Registering volts')
 		alert_spec = AlertSpec(
 			False,
-			alert_intervals=[(-1.1, 1.1)],
+			alert_intervals=[(-4.2, 4.2)],
 			array_treatment=ArrayTreatment.INDIVIDUALLY
 		)
 		
@@ -56,7 +86,7 @@ class Register:
 			name='volts',
 			storage_type=StorageType.ARRAY,
 			array_type=StorageType.NUMBER,
-			valid_bounds=(-24, 24),
+			valid_bounds=(-6, 6),
 			unit='V',
 			alert_spec=alert_spec
 		)
@@ -64,8 +94,9 @@ class Register:
 	def register_temp(self):
 		print('Registering temp')
 		alert_spec = AlertSpec(
-			True,
-			avg_deviation=(0.75, 1),
+			False,
+			abs_alert_thresholds=(-10, 45),
+			avg_deviation=(0.25, 0.25),
 			past_avg_count=10
 		)
 		
@@ -155,7 +186,6 @@ def main():
 				print(f'Registered client {client_name}')
 		
 		print(f'Finished registering clients, keys have been placed in {output_dir}{path.sep}[CLIENT_NAME]_priv.pem')
-			
 	
 	data_manager.close()
 	client.close()
