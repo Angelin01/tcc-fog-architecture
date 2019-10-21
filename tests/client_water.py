@@ -113,7 +113,7 @@ async def main(uri: str, priv_key: ec.EllipticCurvePrivateKey):
 
 
 if __name__ == '__main__':
-	if not len(argv) != 3:
+	if len(argv) != 3:
 		print(f'Usage: {argv[0]} uri keyfile')
 		exit(1)
 	
