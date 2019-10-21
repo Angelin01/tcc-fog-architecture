@@ -20,7 +20,7 @@ def get_payload(msg: str, priv_key: ec.EllipticCurvePrivateKey) -> bytes:
 	
 
 def update_data(data_list: List[dict]):
-	timestamp = datetime.now().timestamp()
+	timestamp = int(datetime.now().timestamp())
 	for data in data_list:
 		data['t'] = timestamp + randint(-2, 2)
 		
@@ -120,10 +120,10 @@ if __name__ == '__main__':
 	URI = argv[1].rstrip('/')
 	
 	try:
-		with open(argv[5], 'rb') as key_file:
+		with open(argv[2], 'rb') as key_file:
 			PRIV_KEY = serialization.load_pem_private_key(key_file.read(), None, default_backend())
 	except ValueError:
-		print(f'{argv[5]} does not contain a valid PEM encoded ECC private key')
+		print(f'{argv[2]} does not contain a valid PEM encoded ECC private key')
 		exit(1)
 	except FileNotFoundError:
 		print(f'Could not find or read file {argv[2]}')
