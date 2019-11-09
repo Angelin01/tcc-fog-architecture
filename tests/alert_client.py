@@ -36,11 +36,13 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 		print('')
 		try:
 			alerts = json.loads(decompress(r.payload))
-			print('----- ALERT -----')
+			msgs = []
+			print('===== ALERT =====')
 			for a in alerts:
-				print(f'* Datatype: {a["n"]}')
-				print(f'* Alert message: {a["a"]}\n')
-			print('----- ALERT -----\n\n')
+				msgs.append(f'* Datatype: {a["n"]}\n'
+				            f'* Alert message: {a["a"]}')
+			print('\n-----------------\n'.join(msgs))
+			print('===== ALERT =====\n\n')
 			
 			await asyncio.sleep(1)
 		except KeyboardInterrupt:
