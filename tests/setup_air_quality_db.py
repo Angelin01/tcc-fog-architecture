@@ -28,13 +28,11 @@ class Register:
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(20, 95),
-			array_treatment=ArrayTreatment.MIN
 		)
 		
 		self._data_manager.register_datatype(
 			name='humidity',
-			storage_type=StorageType.ARRAY,
-			array_type=StorageType.NUMBER,
+			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, 100),
 			alert_spec=alert_spec
 		)
@@ -60,13 +58,11 @@ class Register:
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(None, 60),
-			array_treatment=ArrayTreatment.MEAN
 		)
 		
 		self._data_manager.register_datatype(
 			name='pm1',
-			storage_type=StorageType.ARRAY,
-			array_type=StorageType.NUMBER,
+			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)
@@ -76,13 +72,11 @@ class Register:
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(None, 100),
-			array_treatment=ArrayTreatment.MEAN
 		)
 		
 		self._data_manager.register_datatype(
 			name='pm25',
-			storage_type=StorageType.ARRAY,
-			array_type=StorageType.NUMBER,
+			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)
@@ -92,13 +86,11 @@ class Register:
 		alert_spec = AlertSpec(
 			False,
 			abs_alert_thresholds=(None, 140),
-			array_treatment=ArrayTreatment.MEAN
 		)
 		
 		self._data_manager.register_datatype(
 			name='pm10',
-			storage_type=StorageType.ARRAY,
-			array_type=StorageType.NUMBER,
+			storage_type=StorageType.NUMBER,
 			valid_bounds=(0, None),
 			alert_spec=alert_spec
 		)

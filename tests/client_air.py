@@ -27,7 +27,7 @@ def get_next_data(csvreader: reader):
 		{
 			't': time,
 			'n': datatype,
-			'v': int(value)
+			'v': int(float(value))
 		} for datatype, value in zip(header, line)
 	]
 
