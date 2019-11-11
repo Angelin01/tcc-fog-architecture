@@ -5,13 +5,13 @@ from sys import argv
 def main():
 	database = 'fogcoap'
 	uri = 'mongodb://localhost'
+	if len(argv) >= 2:
+		database = argv[1]
+	
 	if len(argv) >= 3:
-		database = argv[2]
+		uri = argv[2]
 	
-	if len(argv) >= 4:
-		uri = argv[3]
-	
-	print('Connecting to database')
+	print(f'Connecting to database {database} on uri {uri}')
 	dm = fogcoap.DataManager(database, uri)
 	print('Starting broker')
 	broker = fogcoap.Broker(dm)
