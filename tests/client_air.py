@@ -3,7 +3,7 @@ import asyncio
 import json
 from datetime import datetime
 from csv import reader
-from os.path import isfile
+from random import randrange
 from gzip import compress as gzcompress, decompress as gzdecompress
 from sys import argv
 
@@ -21,6 +21,9 @@ def get_payload(msg: str, priv_key: ec.EllipticCurvePrivateKey) -> bytes:
 	
 def get_next_data(csvreader: reader):
 	line = next(csvreader)
+	if not line:
+		return None
+	
 	time = int(datetime.fromisoformat(line[1]).timestamp())
 	line = line[2:]
 	return [
@@ -38,6 +41,9 @@ async def main(uri: str, csvreader: reader, priv_key: ec.EllipticCurvePrivateKey
 	try:
 		while True:
 			data = get_next_data(csvreader)
+			if data is None:
+				exit(0)
+			
 			request = coap.Message(code=coap.POST, uri=uri, payload=get_payload(data, priv_key))
 			print(f'Sending post to {uri} with data {data}')
 			
@@ -86,5 +92,13 @@ if __name__ == '__main__':
 	except FileNotFoundError:
 		print(f'Could not find or read file {argv[3]}')
 		exit(1)
+	
+	# Discard a random amount of lines of data, up to 3000
+	# File should contain about 6000 lines, so it should be fine
+	i = 0
+	stop = randrange(3000)
+	while i < stop:
+		i += 1
+		next(CSVREADER)
 	
 	asyncio.run(main(URI, CSVREADER, PRIV_KEY))
