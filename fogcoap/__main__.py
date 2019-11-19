@@ -13,6 +13,7 @@ def main():
 	
 	print(f'Connecting to database {database} on uri {uri}')
 	dm = fogcoap.DataManager(database, uri)
+
 	print('Starting broker')
 	broker = fogcoap.Broker(dm)
 	broker.run()
