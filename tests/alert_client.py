@@ -35,12 +35,15 @@ async def main(host: str, resource: str, method: coap.Code = coap.GET, payload: 
 	async for r in pr.observation:
 		print('')
 		try:
-			try:
-				print(f'Next Response code: {r.code}\n'
-				      f'Payload: {decompress(r.payload)}')
-			except OSError:
-				print(f'Next Response code: {r.code}\n'
-				      f'Raw Payload: {r.payload}')
+			alerts = json.loads(decompress(r.payload))
+			msgs = []
+			print('===== ALERT =====')
+			for a in alerts:
+				msgs.append(f'* Datatype: {a["n"]}\n'
+				            f'* Alert message: {a["a"]}')
+			print('\n-----------------\n'.join(msgs))
+			print('===== ALERT =====\n\n')
+			
 			await asyncio.sleep(1)
 		except KeyboardInterrupt:
 			print('Exiting')

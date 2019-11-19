@@ -208,7 +208,7 @@ class DataManager:
 				'array_type': None if array_type is None else array_type.value,
 				'unit': unit,
 				'valid_bounds': valid_bounds,
-				'alert_spec': alert_spec.to_dict()
+				'alert_spec': alert_spec.to_dict() if alert_spec is not None else None
 			}).inserted_id
 		except DuplicateKeyError:
 			database_logger.error(f'Failed to add type {name} as it\'s a duplicate')
@@ -501,17 +501,17 @@ class DataManager:
 	
 	def _verify_data(self, data: dict) -> Tuple[str, str, datetime]:
 		data_name = data.get('n') or data.get('name')
-		if not data_name:
+		if data_name is None:
 			database_logger.info('Received data insert with missing data name')
 			raise InvalidData('Data name "n" or "name" not specified')
 		
 		data_value = data.get('v') or data.get('value')
-		if not data_value:
+		if data_value is None:
 			database_logger.info('Received data insert with missing data value')
 			raise InvalidData('Data value "v" or "value" not specified')
 		
 		data_timestamp = data.get('t') or data.get('time')
-		if not data_timestamp:
+		if data_timestamp is None:
 			database_logger.info('Received data insert with missing data time')
 			raise InvalidData('Data timestamp "t" or "time" not specified')
 		

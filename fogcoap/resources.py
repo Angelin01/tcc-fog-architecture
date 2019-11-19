@@ -340,7 +340,7 @@ class DatatypeResource(BaseResource):
 		{"t": [null, 1566687475]}
 		```
 		
-		Returns a gzip compressed json object containing 3 keys:
+		Returns a gzip compressed json object containing 2 keys:
 		`n`: the datatype's name.
 		`d`: the data of the specified datatype, filtered according to parameters, with each key corresponding to one client's name and the values
 		     the requested data that said client sent.
@@ -374,7 +374,7 @@ class DatatypeResource(BaseResource):
 					item['datetime'] = int(item['datetime'].timestamp())
 		
 		return self._build_msg(data={
-			'c': self._name,
+			'n': self._name,
 			'd': datatype_data
 		})
 
